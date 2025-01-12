@@ -104,8 +104,6 @@ public class Pathfinding {
     private static int pathingCnt_ = 0;
     static int MAX_DEPTH = 15;
 
-    static boolean dig = false;
-
     static String indicator;
     static String moveToward(RobotController rc, MapLocation location) throws GameActionException {
         // reset queue when target location changes or there's gap in between calls
@@ -140,7 +138,13 @@ public class Pathfinding {
                 boolean dirRightCanPass = canPass(rc, dir.rotateRight(), dir);
                 boolean dirLeftCanPass = canPass(rc, dir.rotateLeft(), dir);
                 if (dirCanPass || dirRightCanPass || dirLeftCanPass) {
-
+                    if (dirCanPass) {
+                        move(rc, dir);
+                    } else if (dirRightCanPass) {
+                        move(rc, dir.rotateRight());
+                    } else if (dirLeftCanPass) {
+                        move(rc, dir.rotateLeft());
+                    }
                 } else {
                     //encounters obstacle; run simulation to determine best way to go
                     if (rc.getRoundNum() > disableTurnDirRound) {
@@ -331,6 +335,13 @@ public class Pathfinding {
     }
 
 
+    static void move(RobotController rc, Direction d) throws GameActionException {
+        MapLocation loc = rc.getLocation().add(d);
+        if(!rc.canSenseLocation(loc)) return;
+        if(rc.canMove(d)) {
+            rc.move(d);
+        }
+    }
 
     //TODO: Set this function up
     static boolean canPass(RobotController rc, MapLocation loc, Direction targetDir) throws GameActionException {
@@ -339,7 +350,7 @@ public class Pathfinding {
         MapInfo mi = rc.senseMapInfo(loc);
 
         if (mi.isWall()) return false;
-
+        if (mi.hasRuin()) return false;
 
         for (Direction d : Direction.allDirections()) {
             if(!rc.canSenseLocation(loc.add(d))) continue;
