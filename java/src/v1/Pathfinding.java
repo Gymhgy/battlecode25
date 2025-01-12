@@ -140,13 +140,7 @@ public class Pathfinding {
                 boolean dirRightCanPass = canPass(rc, dir.rotateRight(), dir);
                 boolean dirLeftCanPass = canPass(rc, dir.rotateLeft(), dir);
                 if (dirCanPass || dirRightCanPass || dirLeftCanPass) {
-                    if (dirCanPass && canMoveDig(rc, dir)) {
-                        moveDig(rc, dir);
-                    } else if (dirRightCanPass && canMoveDig(rc, dir.rotateRight())) {
-                        moveDig(rc, dir.rotateRight());
-                    } else if (dirLeftCanPass && canMoveDig(rc, dir.rotateLeft())) {
-                        moveDig(rc, dir.rotateLeft());
-                    }
+
                 } else {
                     //encounters obstacle; run simulation to determine best way to go
                     if (rc.getRoundNum() > disableTurnDirRound) {
@@ -168,8 +162,6 @@ public class Pathfinding {
                     }
                     if (pathingCnt == 8) {
                         indicator += "permblocked";
-                    } else if (canMoveDig(rc, dir)) {
-                        moveDig(rc, dir);
                     }
                 }
             } else {
@@ -207,12 +199,7 @@ public class Pathfinding {
                 }
                 Direction moveDir = pathingCnt == 0? prv[pathingCnt] :
                         (currentTurnDir == 0?prv[pathingCnt - 1].rotateLeft():prv[pathingCnt - 1].rotateRight());
-                if (canMoveDig(rc, moveDir)) {
-                    moveDig(rc, moveDir);
-                } else {
-                    // a robot blocking us while we are following wall, wait
-                    indicator += "blocked";
-                }
+
             }
         }
         lastPathingTarget = location;
@@ -343,87 +330,28 @@ public class Pathfinding {
 
     }
 
-    static boolean canMoveDig(RobotController rc, Direction d) {
-        return rc.canMove(d) || rc.canFill(rc.getLocation().add(d));
-    }
 
-    static void moveDig(RobotController rc, Direction d) throws GameActionException {
-        MapLocation loc = rc.getLocation().add(d);
-        MapLocation myLoc = rc.getLocation();
-        if(!rc.canSenseLocation(loc)) return;
-        if(rc.canMove(d)) {
-            rc.move(d);
-        }
-        else if(rc.senseMapInfo(loc).isWater()) {
 
-            if(d.dx*d.dy==0 && rc.senseMapInfo(loc).getCrumbs()==0) {
-                MapLocation rl = myLoc.add(d.rotateLeft()), rr = myLoc.add(d.rotateRight());
-                if(rc.canSenseLocation(rl) && rc.senseMapInfo(rl).isPassable()) {
-                    if (rc.canMove(d.rotateLeft())) {
-                        rc.move(d.rotateLeft());
-                        indicator += "water-RL,";
-                    }
-                    return;
-                }
-                else if(rc.canSenseLocation(rr) && rc.senseMapInfo(rr).isPassable()) {
-                    if (rc.canMove(d.rotateRight())) {
-                        rc.move(d.rotateRight());
-                        indicator += "water-RR,";
-                    }
-                    return;
-                }
-            }
-
-            if (rc.canFill(loc)) {
-                rc.fill(loc);
-            }
-            if(rc.canMove(d)) {
-                rc.move(d);
-            }
-        }
-    }
-
+    //TODO: Set this function up
     static boolean canPass(RobotController rc, MapLocation loc, Direction targetDir) throws GameActionException {
         if (loc.equals(rc.getLocation())) return true;
         if (!rc.canSenseLocation(loc)) return true;
         MapInfo mi = rc.senseMapInfo(loc);
-        if(rc.hasFlag() && rc.getRoundNum() < 201) {
-            for(FlagInfo f : rc.senseNearbyFlags(20, rc.getTeam())) {
-                if (f.getLocation().isWithinDistanceSquared(loc,25)) return false;
-            }
-        }
-        if (mi.isWall() || mi.isDam()) return false;
-        if (mi.isWater()) {
-            for(MapLocation myFlag : Communicator.myFlags) {
-                if(myFlag == null) continue;
-                if(myFlag.isWithinDistanceSquared(mi.getMapLocation(), 4)) return false;
-            }
-            if(rc.hasFlag()) return false;
-            if(mi.getCrumbs() > 0) return true;
-            if (mi.getTeamTerritory() == rc.getTeam() /*|| mi.getTeamTerritory() == Team.NEUTRAL*/)
-                /*if (adjacentToDam(rc, mi.getMapLocation())) return true;
-                else*/ if((loc.x + loc.y) % 2 == 1)return false;
-            return true;
-        }
-        if(rc.hasFlag() && rc.getRoundNum() > 201) return true;
+
+        if (mi.isWall()) return false;
+
 
         for (Direction d : Direction.allDirections()) {
             if(!rc.canSenseLocation(loc.add(d))) continue;
             RobotInfo r = rc.senseRobotAtLocation(loc.add(d));
-            if (r != null && r.hasFlag && r.team == rc.getTeam()) return false;
         }
         RobotInfo robot = rc.senseRobotAtLocation(loc);
         if (robot == null)
             return true;
         return false;
+
     }
-    static boolean adjacentToDam(RobotController rc, MapLocation location) throws GameActionException {
-        for (Direction d : Direction.allDirections()) {
-            if(!rc.canSenseLocation(location.add(d))) continue;
-            if (rc.senseMapInfo(location.add(d)).isDam()) return true;
-        }
-        return false;
-    }
+
     static boolean canPass(RobotController rc, Direction dir, Direction targetDir) throws GameActionException {
         MapLocation loc = rc.getLocation().add(dir);
         return canPass(rc, loc, targetDir);

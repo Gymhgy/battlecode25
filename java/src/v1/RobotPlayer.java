@@ -16,6 +16,7 @@ import java.util.Set;
  * is created!
  */
 public class RobotPlayer {
+    static String indicator = "";
 
     static int turnCount = 0;
 
@@ -68,9 +69,15 @@ public class RobotPlayer {
                 e.printStackTrace();
 
             } finally {
+                endTurn(rc);
                 Clock.yield();
             }
         }
     }
 
+    // For debug
+    public static void endTurn(RobotController rc) {
+        // Basically print stuff here
+        rc.setIndicatorString(indicator);
+    }
 }
