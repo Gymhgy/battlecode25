@@ -1,4 +1,4 @@
-package v1;
+package v1.fast;
 
 import battlecode.common.Direction;
 import battlecode.common.MapLocation;

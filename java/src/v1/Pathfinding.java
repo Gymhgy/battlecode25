@@ -1,6 +1,7 @@
 package v1;
 
 import battlecode.common.*;
+import v1.fast.FastMath;
 
 /**
  * This class contains logic / variable that is shared between all units

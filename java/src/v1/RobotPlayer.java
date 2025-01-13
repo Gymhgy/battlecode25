@@ -1,6 +1,7 @@
 package v1;
 
 import battlecode.common.*;
+import v1.fast.FastMath;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -34,13 +35,44 @@ public class RobotPlayer {
         Direction.NORTHWEST,
     };
 
+    static void init (RobotController rc) {
+        try {
+            switch (rc.getType()) {
+                case SOLDIER:
+                    Soldier.init(rc);
+                    break;
+                case LEVEL_ONE_DEFENSE_TOWER:
+                case LEVEL_TWO_DEFENSE_TOWER:
+                case LEVEL_THREE_DEFENSE_TOWER:
+                case LEVEL_ONE_PAINT_TOWER:
+                case LEVEL_TWO_PAINT_TOWER:
+                case LEVEL_THREE_PAINT_TOWER:
+                case LEVEL_ONE_MONEY_TOWER:
+                case LEVEL_TWO_MONEY_TOWER:
+                case LEVEL_THREE_MONEY_TOWER:
+                    Tower.init(rc);
+                    break;
+                case SPLASHER:
+                    Splasher.init(rc);
+                case MOPPER:
+                    Mopper.init(rc);
+                    break;
+            }
+        } catch (GameActionException e) {
+            System.out.println(rc.getType() + " - Game Exception");
+            e.printStackTrace();
+
+        } catch (Exception e) {
+            System.out.println(rc.getType() + " - Exception");
+            e.printStackTrace();
+        }
+    }
 
     @SuppressWarnings("unused")
     public static void run(RobotController rc) throws GameActionException {
+        FastMath.initRand(rc);
+        init(rc);
         while (true) {
-            if (rc.getRoundNum() == 400) {
-                rc.resign();
-            }
             try {
                 switch (rc.getType()) {
                     case SOLDIER:

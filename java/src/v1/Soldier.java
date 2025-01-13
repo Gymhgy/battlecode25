@@ -1,6 +1,7 @@
 package v1;
 
 import battlecode.common.*;
+import v1.fast.FastMath;
 
 public class Soldier {
 
@@ -27,6 +28,11 @@ public class Soldier {
     static MapInfo curRuin = null;
     static MapInfo[] nearbyTiles;
     static RobotInfo[] nearbyRobots;
+
+    static void init(RobotController rc) throws GameActionException {
+
+    }
+
     static void run(RobotController rc) throws GameActionException {
         nearbyTiles = rc.senseNearbyMapInfos();
         if (curRuin == null) {
@@ -122,7 +128,7 @@ public class Soldier {
                     MapInfo mi = rc.senseMapInfo(loc);
                     PaintType ideal = numToPaint(moneyTowerPattern[i + 2][j + 2]);
                     if (!mi.getPaint().equals(ideal) && rc.isActionReady()) { // I dont understnad why is Action Ready needs to be checked here but
-                        System.out.println(rc.getLocation().toString() + " Painting at: " + loc);
+                        //System.out.println(rc.getLocation().toString() + " Painting at: " + loc);
                         rc.attack(loc, ideal.isSecondary());
                         break paintLoop;
                     }
