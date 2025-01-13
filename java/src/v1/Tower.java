@@ -50,10 +50,10 @@ public class Tower {
             if (og && rc.getRoundNum() < 3) {
                 type = UnitType.SOLDIER;
             }
-            else if (rc.getRoundNum() < 100 && FastMath.rand256() % 4 < 1) {
+            else if (rc.getRoundNum() < 150 && FastMath.rand256() % 4 < 1) {
                 type = UnitType.MOPPER;
             }
-            else if (FastMath.rand256() % 5 < 1) {
+            else if (FastMath.rand256() % 3 < 1) {
                 type = UnitType.MOPPER;
             }
 

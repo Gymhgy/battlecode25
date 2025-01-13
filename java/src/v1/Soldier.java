@@ -96,7 +96,7 @@ public class Soldier {
                 int cnt = nearby.length;
                 for (MapInfo mi : nearby) {
                     if (mi.isWall() || mi.hasRuin()) cnt--;
-                    if (mi.getPaint().isAlly()) cnt--;
+                    if (mi.getPaint() != PaintType.EMPTY) cnt--;
                 }
                 if (cnt == 0)
                     Pathfinding.navigateRandomly(rc);
@@ -172,27 +172,26 @@ public class Soldier {
         if (ri != null && ri.getType().isTowerType()) {
             return false;
         }
-        if (!rc.getLocation().isWithinDistanceSquared(ruinLoc, 2)) {
-            int soldierCount = 0;
+        int soldierCount = 0;
 
-            // TODO: unroll this loop, uses so much bytecode rn
-            MapLocation[] surroundingLocations = rc.getAllLocationsWithinRadiusSquared(ruinLoc, 2);
-            for (MapLocation loc : surroundingLocations) {
-                if (rc.canSenseLocation(loc) && rc.isLocationOccupied(loc)) {
-                    RobotInfo robot = rc.senseRobotAtLocation(loc);
-                    if (robot.getType() == UnitType.SOLDIER && robot.getTeam() == rc.getTeam()) {
-                        soldierCount++;
-                    }
-                    if (rc.senseMapInfo(loc).getMark() == PaintType.ALLY_SECONDARY) {
-                        curRuinType = UnitType.LEVEL_ONE_PAINT_TOWER;
-                    }
+        // TODO: unroll this loop, uses so much bytecode rn
+        MapLocation[] surroundingLocations = rc.getAllLocationsWithinRadiusSquared(ruinLoc, 2);
+        for (MapLocation loc : surroundingLocations) {
+            if (rc.canSenseLocation(loc) && rc.isLocationOccupied(loc)) {
+                RobotInfo robot = rc.senseRobotAtLocation(loc);
+                if (robot.getType() == UnitType.SOLDIER && robot.getTeam() == rc.getTeam()) {
+                    soldierCount++;
                 }
-
-                if (soldierCount >= 2) {
-                    return false;
+                if (rc.senseMapInfo(loc).getMark() == PaintType.ALLY_SECONDARY) {
+                    curRuinType = UnitType.LEVEL_ONE_PAINT_TOWER;
                 }
             }
+
+            if (soldierCount >= 2 && !rc.getLocation().isWithinDistanceSquared(ruinLoc, 2)) {
+                return false;
+            }
         }
+
 
         return true;
     }

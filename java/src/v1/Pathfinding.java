@@ -352,7 +352,7 @@ public class Pathfinding {
 
         if (mi.isWall()) return false;
         if (mi.hasRuin()) return false;
-
+        if (rc.getType() == UnitType.MOPPER && mi.getPaint().isEnemy()) return false;
         for (Direction d : Direction.allDirections()) {
             if(!rc.canSenseLocation(loc.add(d))) continue;
             RobotInfo r = rc.senseRobotAtLocation(loc.add(d));
