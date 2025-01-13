@@ -36,6 +36,12 @@ public class Tower {
             servicerId = 0;
         }
 
+        if (rc.getChips() > 2000 && rc.getRoundNum() > 50 && Util.isPaintTower(rc.getType())) {
+            if(rc.canUpgradeTower(rc.getLocation())) {
+                rc.upgradeTower(rc.getLocation());
+            }
+        }
+
         if (rc.getChips() > 1300) {
             Direction dir = directions[FastMath.rand256() % 8];
             MapLocation nextLoc = rc.getLocation().add(dir);
@@ -47,7 +53,7 @@ public class Tower {
             else if (rc.getRoundNum() < 100 && FastMath.rand256() % 4 < 1) {
                 type = UnitType.MOPPER;
             }
-            else if (FastMath.rand256() % 10 < 1) {
+            else if (FastMath.rand256() % 5 < 1) {
                 type = UnitType.MOPPER;
             }
 

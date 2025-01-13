@@ -87,7 +87,7 @@ public class Mopper {
             RobotInfo tower = rc.senseRobotAtLocation(target);
             if (target.equals(paintTower)) {
                 int amount = UnitType.MOPPER.paintCapacity - rc.getPaint();
-                if (tower.getPaintAmount() >= amount) {
+                if (tower.getPaintAmount() >= (1 - (double)rc.getRoundNum() / 2000) * 300) {
                     if (rc.canTransferPaint(target, -amount)) {
                         rc.transferPaint(target, -amount);
                         target = null;
