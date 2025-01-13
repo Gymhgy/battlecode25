@@ -18,7 +18,7 @@ public class Tower {
             // build soldier
             Direction dir = directions[FastMath.rand256() % 8];
             MapLocation nextLoc = rc.getLocation().add(dir);
-            if (rc.canBuildRobot(UnitType.SOLDIER, nextLoc)){
+            if (rc.canBuildRobot(UnitType.SOLDIER, nextLoc)) {
                 rc.buildRobot(UnitType.SOLDIER, nextLoc);
             }
         }
