@@ -10,8 +10,37 @@ public class Soldier {
             {2, 2, 1, 2, 2},
             {2, 1, 0, 1, 2},
             {2, 2, 1, 2, 2},
-            {1, 2, 2, 2, 1}
+            {1, 2, 2, 2, 1},
+            {1}
     };
+    static int[][] paintTowerPattern = {
+            {2, 1, 1, 1, 2},
+            {1, 2, 1, 2, 1},
+            {1, 1, 0, 1, 1},
+            {1, 2, 1, 2, 1},
+            {2, 1, 1, 1, 2},
+            {2}
+    }; // I dont even know what pattern the defensive tower is LMAO
+    public static UnitType iToTower(int t) {
+        switch(t) {
+            case 1:
+                return UnitType.LEVEL_ONE_MONEY_TOWER;
+            case 2:
+                return UnitType.LEVEL_ONE_PAINT_TOWER;
+        }
+        return null;
+    }
+    public static int[][] towerPattern(int t){
+        switch(t) {
+            case 1:
+                //System.out.println("Money");
+                return moneyTowerPattern;
+            case 0:
+                //System.out.println("Paint");
+                return paintTowerPattern;
+        }
+        return null;
+    }
     static PaintType numToPaint(int num) {
         switch (num) {
             case 0:
@@ -23,7 +52,9 @@ public class Soldier {
         }
         return PaintType.EMPTY;
     }
-    static int buildCost = 24 * 5; // How much it costs to build a tower
+    static int buildCost = 24 * 5 + 40; // How much it costs to build a tower + 40 for traversal
+    static int paintCap = 200;
+    static int sel = 1;
     static String indicator = "";
     static MapInfo curRuin = null;
     static MapInfo[] nearbyTiles;
@@ -35,6 +66,7 @@ public class Soldier {
 
     static void run(RobotController rc) throws GameActionException {
         nearbyTiles = rc.senseNearbyMapInfos();
+        indicator = "";
         if (curRuin == null) {
             for (MapInfo tile : nearbyTiles) {
                 if (tile.getMapLocation().isWithinDistanceSquared(rc.getLocation(), 2)) {
@@ -48,7 +80,7 @@ public class Soldier {
 
         if (curRuin != null) {
             if (ruinCheck(rc, curRuin)) {
-                tryBuild(rc);
+                tryBuild(rc, towerPattern(sel));
             } else {
                 curRuin = null;
             }
@@ -97,9 +129,10 @@ public class Soldier {
         return true;
     }
 
-    static void tryBuild(RobotController rc) throws GameActionException {
-        if (rc.canCompleteTowerPattern(UnitType.LEVEL_ONE_MONEY_TOWER, curRuin.getMapLocation())) {
-            rc.completeTowerPattern(UnitType.LEVEL_ONE_MONEY_TOWER, curRuin.getMapLocation());
+    static void tryBuild(RobotController rc, int[][] tower) throws GameActionException {
+        if (rc.getChips() > 1000 && rc.canCompleteTowerPattern(iToTower(tower[5][0]), curRuin.getMapLocation())) {
+            rc.completeTowerPattern(iToTower(tower[5][0]), curRuin.getMapLocation());
+            System.out.println("Trying to complete");
             curRuin = null;
             return;
         }
@@ -112,10 +145,10 @@ public class Soldier {
         MapLocation myLoc = rc.getLocation();
         if (canPaintReal(rc, myLoc) && myLoc.isWithinDistanceSquared(curRuin.getMapLocation(), 8)){
             MapLocation delta = FastMath.minusVec(curRuin.getMapLocation(), myLoc);
-            PaintType ideal = numToPaint(moneyTowerPattern[delta.x + 2][delta.y + 2]);
+            PaintType ideal = numToPaint(tower[delta.x + 2][delta.y + 2]);
             if (!rc.senseMapInfo(myLoc).getPaint().equals(ideal)) {
+                //System.out.println(rc.getLocation().toString() + " Painting at my position: " + myLoc);
                 rc.attack(myLoc, ideal.isSecondary());
-                return;
             }
         }
         // else find 5x5
@@ -126,23 +159,23 @@ public class Soldier {
                 MapLocation loc = FastMath.addVec(curRuin.getMapLocation(), new MapLocation(i, j));
                 if (canPaintReal(rc, loc)) {
                     MapInfo mi = rc.senseMapInfo(loc);
-                    PaintType ideal = numToPaint(moneyTowerPattern[i + 2][j + 2]);
+                    PaintType ideal = numToPaint(tower[i + 2][j + 2]);
                     if (!mi.getPaint().equals(ideal) && rc.isActionReady()) { // I dont understnad why is Action Ready needs to be checked here but
                         //System.out.println(rc.getLocation().toString() + " Painting at: " + loc);
                         rc.attack(loc, ideal.isSecondary());
                         break paintLoop;
                     }
+                } else if (rc.getPaint() < 6) {
+                    rc.disintegrate();
                 }
             }
         }
     }
 
     static void paintRandomly(RobotController rc) throws  GameActionException {
-        MapLocation myLoc = rc.getLocation();
-        if(canPaintReal(rc, myLoc)) {
-
-            System.out.println(rc.getLocation().toString() + " Painting at myself");
-            rc.attack(rc.getLocation(), (myLoc.x + myLoc.y) % 2 == 0);
+        if(canPaintReal(rc, rc.getLocation()) && !rc.senseMapInfo(rc.getLocation()).getPaint().isAlly()) {
+            //System.out.println(rc.getLocation().toString() + " Painting at myself");
+            rc.attack(rc.getLocation());
             return;
         }
 
