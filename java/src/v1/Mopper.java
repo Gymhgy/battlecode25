@@ -11,11 +11,9 @@ public class Mopper {
     private static MapLocation moneyTower = null;
     private static MapLocation target = null;
 
-    static boolean servicer = false;
 
     static void init(RobotController rc) {
         var messages = rc.readMessages(-1);
-        servicer = messages.length > 0 && ((messages[0].getBytes() & (1 << 31)) != 0);
     }
 
     static void run(RobotController rc) throws GameActionException {
@@ -23,36 +21,41 @@ public class Mopper {
             performAttack(rc);
         }
 
-        if (servicer) {
-            if (paintTower != null && moneyTower != null) {
-                runRoute(rc);
-            } else {
-                wander(rc);
-            }
-        }
-        else {
+        if (paintTower != null && moneyTower != null) {
+            runRoute(rc);
+        } else {
             wander(rc);
         }
+
+
 
         if (rc.isActionReady()) {
             performAttack(rc);
         }
-
-        rc.setIndicatorString("Servicer: " + servicer);
     }
 
     static void wander(RobotController rc) throws GameActionException {
-        if (servicer) {
-            RobotInfo[] allies = rc.senseNearbyRobots(-1, rc.getTeam());
-            for (RobotInfo ally : allies) {
-                if (moneyTower == null && Util.isMoneyTower(ally.getType())) {
-                    moneyTower = ally.getLocation();
+        RobotInfo[] allies = rc.senseNearbyRobots(-1, rc.getTeam());
+        for (RobotInfo ally : allies) {
+            if (target == null) {
+                if (Util.isMoneyTower(ally.getType())) {
+                    if (ally.getPaintAmount() < 300) {
+                        target = ally.getLocation();
+                        break;
+                    }
                 }
-                if (paintTower == null && Util.isPaintTower(ally.getType())) {
-                    paintTower = ally.getLocation();
+                 else if (ally.getType() == UnitType.SOLDIER) {
+                    if (ally.getPaintAmount() < 100) {
+                        target = ally.getLocation();
+                        break;
+                    }
                 }
             }
+            if (paintTower == null && Util.isPaintTower(ally.getType())) {
+                paintTower = ally.getLocation();
+            }
         }
+
         // If towers not found, wander randomly
         if (paintTower == null || moneyTower == null) {
             Pathfinding.navigateRandomly(rc);
@@ -69,17 +72,16 @@ public class Mopper {
                 return;
             }
         }
-        if (rc.canSenseLocation(moneyTower)) {
+        /*if (rc.canSenseLocation(moneyTower)) {
             if (rc.senseRobotAtLocation(moneyTower) == null) {
                 wander(rc);
                 return;
             }
-        }
+        }*/
 
         if (target == null) {
-            target = rc.getPaint() > 60 ? moneyTower : paintTower;
+            target = rc.getPaint() > 60 ? target : paintTower;
         }
-        if (rc.getPaint() < 60) target = paintTower;
 
         if (rc.getLocation().isAdjacentTo(target)) {
             RobotInfo tower = rc.senseRobotAtLocation(target);
@@ -88,7 +90,7 @@ public class Mopper {
                 if (tower.getPaintAmount() >= amount) {
                     if (rc.canTransferPaint(target, -amount)) {
                         rc.transferPaint(target, -amount);
-                        target = moneyTower;
+                        target = null;
                     }
                 }
             } else {
@@ -100,13 +102,30 @@ public class Mopper {
                }
             }
         }
-
-        // Watch out here... we might be losing a turn. Worth investigating in the future
-        Pathfinding.moveToward(rc, target);
+        if (target == null) {
+            Pathfinding.navigateRandomly(rc);
+        }
+        else {
+            Pathfinding.moveToward(rc, target);
+        }
     }
 
     static void performAttack(RobotController rc) throws GameActionException {
         RobotInfo[] enemies = rc.senseNearbyRobots(2, rc.getTeam().opponent());
+        RobotInfo[] allies = rc.senseNearbyRobots(2, rc.getTeam());
+
+        if (rc.getPaint() > 60) {
+            for (RobotInfo ally : allies) {
+                if (ally.getType() == UnitType.SOLDIER) {
+                    if (ally.getPaintAmount() < 150) {
+                        if (rc.canTransferPaint(ally.getLocation(), 100 - rc.getPaint())) {
+                            rc.transferPaint(ally.getLocation(), 100 - rc.getPaint());
+                            return;
+                        }
+                    }
+                }
+            }
+        }
 
         for (RobotInfo enemy : enemies) {
             if (rc.senseMapInfo(enemy.getLocation()).getPaint().isEnemy()) {

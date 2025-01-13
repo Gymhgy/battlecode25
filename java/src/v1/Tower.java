@@ -36,7 +36,7 @@ public class Tower {
             servicerId = 0;
         }
 
-        if (rc.getChips() > 1500) {
+        if (rc.getChips() > 1300) {
             Direction dir = directions[FastMath.rand256() % 8];
             MapLocation nextLoc = rc.getLocation().add(dir);
 
@@ -47,7 +47,7 @@ public class Tower {
             else if (rc.getRoundNum() < 100 && FastMath.rand256() % 4 < 1) {
                 type = UnitType.MOPPER;
             }
-            else if (FastMath.rand256() % 3 < 2) {
+            else if (FastMath.rand256() % 10 < 1) {
                 type = UnitType.MOPPER;
             }
 
@@ -75,7 +75,7 @@ public class Tower {
         RobotInfo ri = rc.senseRobotAtLocation(loc);
         servicerId = ri.getID();
         lastSeenServicer = rc.getRoundNum();
-        rc.sendMessage(loc, 1 << 31);
+        //rc.sendMessage(loc, 1 << 31);
     }
 
     static void attackNearby(RobotController rc) throws GameActionException {
