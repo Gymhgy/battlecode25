@@ -22,7 +22,8 @@ public class Soldier {
         }
         return PaintType.EMPTY;
     }
-    static int buildCost = 24 * 5; // How much it costs to build a tower
+    static int buildCost = 24 * 5 + 40; // How much it costs to build a tower + 40 for traversal
+    static int paintCap = 200;
     static String indicator = "";
     static MapInfo curRuin = null;
     static MapInfo[] nearbyTiles;
@@ -39,6 +40,9 @@ public class Soldier {
                         indicator = curRuin.toString();
                         rc.setTimelineMarker("RUIN DETECTED", 255, 255, 255);
                     }
+                    else if (ri.getType().isTowerType()) {
+                        supplyPaint(rc, ri.location);
+                    }
                 }
             }
         }
@@ -48,6 +52,9 @@ public class Soldier {
             if (ri == null || !ri.getType().isTowerType()) {
                 tryBuild(rc);
             } else {
+                if (ri.getType().isTowerType()) {
+                    supplyPaint(rc, ri.location);
+                }
                 curRuin = null;
             }
         }
@@ -65,9 +72,7 @@ public class Soldier {
     static void tryBuild(RobotController rc) throws GameActionException {
         if (rc.canCompleteTowerPattern(UnitType.LEVEL_ONE_MONEY_TOWER, curRuin.getMapLocation())) {
             rc.completeTowerPattern(UnitType.LEVEL_ONE_MONEY_TOWER, curRuin.getMapLocation());
-            if (rc.getPaint() < buildCost) { // find the nearest tower and transfer paint
-                //rc.canSendMessage(curRuin.getMapLocation())
-            }
+            supplyPaint(rc, curRuin.getMapLocation());
             curRuin = null;
             return;
         }
@@ -123,6 +128,13 @@ public class Soldier {
     static boolean canPaintReal(RobotController rc, MapLocation loc) throws GameActionException { // canPaint that checks for cost
         int paintCap = rc.getPaint();
         return paintCap > rc.getType().attackCost && rc.canPaint(loc);
-
+    }
+    static void supplyPaint(RobotController rc, MapLocation loc) throws GameActionException {
+        if (rc.getPaint() < buildCost) { // find the nearest tower and transfer paint
+            System.out.println("running actually");
+            if (rc.canTransferPaint(loc, -(paintCap - rc.getPaint()))) {
+                rc.transferPaint(loc, -(paintCap - rc.getPaint()));
+            }
+        }
     }
 }
