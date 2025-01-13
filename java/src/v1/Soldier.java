@@ -36,9 +36,12 @@ public class Soldier {
                 if (tile.hasRuin()) {
                     RobotInfo ri = rc.senseRobotAtLocation(tile.getMapLocation());
                     if (ri == null || !ri.getType().isTowerType()) {
-                        curRuin = tile;
-                        indicator = curRuin.toString();
-                        rc.setTimelineMarker("RUIN DETECTED", 255, 255, 255);
+                        RobotInfo[] nearby = rc.senseNearbyRobots();
+                        if (nearby.length < 3) {
+                            curRuin = tile;
+                            indicator = curRuin.toString();
+                            rc.setTimelineMarker("RUIN DETECTED", 255, 255, 255);
+                        }
                     }
                     else if (ri.getType().isTowerType()) {
                         supplyPaint(rc, ri.location);
@@ -87,7 +90,7 @@ public class Soldier {
             MapLocation delta = FastMath.minusVec(curRuin.getMapLocation(), myLoc);
             PaintType ideal = numToPaint(moneyTowerPattern[delta.x + 2][delta.y + 2]);
             if (!rc.senseMapInfo(myLoc).getPaint().equals(ideal)) {
-                System.out.println(rc.getLocation().toString() + " Painting at my position: " + myLoc);
+                //System.out.println(rc.getLocation().toString() + " Painting at my position: " + myLoc);
                 rc.attack(myLoc, ideal.isSecondary());
             }
         }
@@ -96,12 +99,17 @@ public class Soldier {
         for (int i = -2; i <= 2; i++) {
             for (int j = -2; j <= 2; j++) {
                 if (i == 0 && j == 0) continue;
+                RobotInfo[] nearby = rc.senseNearbyRobots();
+                if (nearby.length > 3) {
+                    curRuin = null;
+                    return;
+                }
                 MapLocation loc = FastMath.addVec(curRuin.getMapLocation(), new MapLocation(i, j));
                 if (canPaintReal(rc, loc)) {
                     MapInfo mi = rc.senseMapInfo(loc);
                     PaintType ideal = numToPaint(moneyTowerPattern[i + 2][j + 2]);
                     if (!mi.getPaint().equals(ideal) && rc.isActionReady()) { // I dont understnad why is Action Ready needs to be checked here but
-                        System.out.println(rc.getLocation().toString() + " Painting at: " + loc);
+                        //System.out.println(rc.getLocation().toString() + " Painting at: " + loc);
                         rc.attack(loc, ideal.isSecondary());
                         break paintLoop;
                     }
@@ -112,7 +120,7 @@ public class Soldier {
 
     static void paintRandomly(RobotController rc) throws  GameActionException {
         if(canPaintReal(rc, rc.getLocation())) {
-            System.out.println(rc.getLocation().toString() + " Painting at myself");
+            //System.out.println(rc.getLocation().toString() + " Painting at myself");
             rc.attack(rc.getLocation());
             return;
         }
@@ -131,9 +139,11 @@ public class Soldier {
     }
     static void supplyPaint(RobotController rc, MapLocation loc) throws GameActionException {
         if (rc.getPaint() < buildCost) { // find the nearest tower and transfer paint
-            System.out.println("running actually");
-            if (rc.canTransferPaint(loc, -(paintCap - rc.getPaint()))) {
-                rc.transferPaint(loc, -(paintCap - rc.getPaint()));
+            //System.out.println("running actually");
+            for (int i = 0; i < paintCap - 11; i += 10) {
+                if (rc.canTransferPaint(loc, -(paintCap - rc.getPaint() - i))) {
+                    rc.transferPaint(loc, -(paintCap - rc.getPaint() - i));
+                }
             }
         }
     }

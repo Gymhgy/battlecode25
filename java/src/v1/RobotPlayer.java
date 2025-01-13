@@ -38,7 +38,7 @@ public class RobotPlayer {
     @SuppressWarnings("unused")
     public static void run(RobotController rc) throws GameActionException {
         while (true) {
-            if (rc.getRoundNum() == 400) {
+            if (rc.getRoundNum() == 1000) {
                 rc.resign();
             }
             try {
