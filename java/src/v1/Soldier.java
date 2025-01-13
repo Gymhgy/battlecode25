@@ -29,30 +29,26 @@ public class Soldier {
     static RobotInfo[] nearbyRobots;
     static void run(RobotController rc) throws GameActionException {
         nearbyTiles = rc.senseNearbyMapInfos();
-        indicator = "";
         if (curRuin == null) {
             for (MapInfo tile : nearbyTiles) {
-                if (tile.hasRuin()) {
-                    RobotInfo ri = rc.senseRobotAtLocation(tile.getMapLocation());
-                    if (ri == null || !ri.getType().isTowerType()) {
-                        curRuin = tile;
-                        indicator = curRuin.toString();
-                        rc.setTimelineMarker("RUIN DETECTED", 255, 255, 255);
-                    }
+                if (tile.getMapLocation().isWithinDistanceSquared(rc.getLocation(), 2)) {
+                    continue;
+                }
+                if (ruinCheck(rc, tile)) {
+                    curRuin = tile;
                 }
             }
         }
 
         if (curRuin != null) {
-            RobotInfo ri = rc.senseRobotAtLocation(curRuin.getMapLocation());
-            if (ri == null || !ri.getType().isTowerType()) {
+            if (ruinCheck(rc, curRuin)) {
                 tryBuild(rc);
             } else {
                 curRuin = null;
             }
         }
-        else {
 
+        if (curRuin == null) {
             Pathfinding.navigateRandomly(rc);
             if (rc.isActionReady()) {
                 paintRandomly(rc);
@@ -62,12 +58,42 @@ public class Soldier {
         endTurn(rc);
     }
 
+    static boolean ruinCheck(RobotController rc, MapInfo ruin) throws GameActionException {
+        if (!ruin.hasRuin()) return false;
+        MapLocation ruinLoc = ruin.getMapLocation();
+
+        if (!rc.canSenseLocation(ruinLoc)) {
+            // uh we can't see the damn ruin... return true to be safe
+            return true;
+        }
+        RobotInfo ri = rc.senseRobotAtLocation(ruinLoc);
+        if (ri != null && ri.getType().isTowerType()) {
+            return false;
+        }
+        if (!rc.getLocation().isWithinDistanceSquared(ruinLoc, 2)) {
+            int soldierCount = 0;
+
+            // TODO: unroll this loop, uses so much bytecode rn
+            MapLocation[] surroundingLocations = rc.getAllLocationsWithinRadiusSquared(ruinLoc, 2);
+            for (MapLocation loc : surroundingLocations) {
+                if (rc.canSenseLocation(loc) && rc.isLocationOccupied(loc)) {
+                    RobotInfo robot = rc.senseRobotAtLocation(loc);
+                    if (robot.getType() == UnitType.SOLDIER && robot.getTeam() == rc.getTeam()) {
+                        soldierCount++;
+                    }
+                }
+                if (soldierCount >= 2) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
     static void tryBuild(RobotController rc) throws GameActionException {
         if (rc.canCompleteTowerPattern(UnitType.LEVEL_ONE_MONEY_TOWER, curRuin.getMapLocation())) {
             rc.completeTowerPattern(UnitType.LEVEL_ONE_MONEY_TOWER, curRuin.getMapLocation());
-            if (rc.getPaint() < buildCost) { // find the nearest tower and transfer paint
-                //rc.canSendMessage(curRuin.getMapLocation())
-            }
             curRuin = null;
             return;
         }
@@ -82,8 +108,8 @@ public class Soldier {
             MapLocation delta = FastMath.minusVec(curRuin.getMapLocation(), myLoc);
             PaintType ideal = numToPaint(moneyTowerPattern[delta.x + 2][delta.y + 2]);
             if (!rc.senseMapInfo(myLoc).getPaint().equals(ideal)) {
-                System.out.println(rc.getLocation().toString() + " Painting at my position: " + myLoc);
                 rc.attack(myLoc, ideal.isSecondary());
+                return;
             }
         }
         // else find 5x5
@@ -106,18 +132,24 @@ public class Soldier {
     }
 
     static void paintRandomly(RobotController rc) throws  GameActionException {
-        if(canPaintReal(rc, rc.getLocation())) {
+        MapLocation myLoc = rc.getLocation();
+        if(canPaintReal(rc, myLoc)) {
+
             System.out.println(rc.getLocation().toString() + " Painting at myself");
-            rc.attack(rc.getLocation());
+            rc.attack(rc.getLocation(), (myLoc.x + myLoc.y) % 2 == 0);
             return;
         }
 
         for(MapLocation loc : rc.getAllLocationsWithinRadiusSquared(rc.getLocation(), UnitType.SOLDIER.actionRadiusSquared)) {
-            //Wait what is this supposed to do LMAO
+
+            //TODO: intelligent painting behavior
         }
     }
 
     static void endTurn(RobotController rc) throws GameActionException {
+        if (curRuin != null) {
+            rc.setIndicatorLine(rc.getLocation(), curRuin.getMapLocation(), 255, 0, 0);
+        }
         rc.setIndicatorString(indicator);
     }
     static boolean canPaintReal(RobotController rc, MapLocation loc) throws GameActionException { // canPaint that checks for cost
