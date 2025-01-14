@@ -145,11 +145,17 @@ public class Soldier {
             curSRP = null;
             return;
         }
-        Pathfinding.moveToward(rc, curSRP);
+
+        if(!rc.getLocation().equals(curSRP))
+            Pathfinding.moveToward(rc, curSRP);
         MapLocation myLoc = rc.getLocation();
         if (canPaintReal(rc, myLoc) && myLoc.isWithinDistanceSquared(curSRP, 8)){
             boolean ideal = trySRP(myLoc);
-            if (rc.senseMapInfo(myLoc).getPaint().isSecondary() != ideal) {
+            PaintType paintType = rc.senseMapInfo(myLoc).getPaint();
+            if (paintType.isEnemy()) {
+
+            }
+            else if (paintType == PaintType.EMPTY || paintType.isSecondary() != ideal) {
                 rc.attack(myLoc, ideal);
                 return;
             }
@@ -162,7 +168,11 @@ public class Soldier {
                 MapLocation loc = FastMath.addVec(curSRP, new MapLocation(i, j));
                 if (canPaintReal(rc, loc)) {
                     boolean ideal = trySRP(loc);
-                    if (rc.senseMapInfo(loc).getPaint().isSecondary() != ideal) {
+                    PaintType paintType = rc.senseMapInfo(loc).getPaint();
+                    if (paintType.isEnemy()) {
+
+                    }
+                    else if (paintType == PaintType.EMPTY || paintType.isSecondary() != ideal) {
                         rc.attack(loc, ideal);
                         return;
                     }

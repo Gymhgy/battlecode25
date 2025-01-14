@@ -47,7 +47,7 @@ public class Tower {
             MapLocation nextLoc = rc.getLocation().add(dir);
 
             UnitType type = UnitType.SOLDIER;
-            if (og && rc.getRoundNum() < 3) {
+            if (og && rc.getRoundNum() < 10) {
                 type = UnitType.SOLDIER;
             }
             else if (rc.getRoundNum() < 150 && FastMath.rand256() % 4 < 1) {
