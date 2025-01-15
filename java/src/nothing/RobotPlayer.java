@@ -47,7 +47,9 @@ public class RobotPlayer {
      **/
     @SuppressWarnings("unused")
     public static void run(RobotController rc) throws GameActionException {
-        while (true) {
+        int i = 0;
+        while (i < 1000) {
+            i++;
             Clock.yield();
         }
     }

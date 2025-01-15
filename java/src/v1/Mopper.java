@@ -13,7 +13,7 @@ public class Mopper {
 
 
     static void init(RobotController rc) {
-        var messages = rc.readMessages(-1);
+        var messages = rc.readMessages(-1); // What are messages used for?
     }
 
     static void run(RobotController rc) throws GameActionException {

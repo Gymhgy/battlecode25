@@ -35,8 +35,15 @@ public class Tower {
         if (rc.getRoundNum() - lastSeenServicer > 50) {
             servicerId = 0;
         }
-
-        if (rc.getChips() > 1300) {
+        if (rc.getChips() > 3000) {
+            UnitType type = UnitType.SPLASHER;
+            Direction dir = directions[FastMath.rand256() % 8];
+            MapLocation nextLoc = rc.getLocation().add(dir);
+            if (rc.canBuildRobot(type, nextLoc)) {
+                rc.buildRobot(type, nextLoc);
+            }
+        }
+        else if (rc.getChips() > 1300) {
             Direction dir = directions[FastMath.rand256() % 8];
             MapLocation nextLoc = rc.getLocation().add(dir);
 

@@ -18,4 +18,9 @@ public class Util {
                 t == UnitType.LEVEL_THREE_PAINT_TOWER ||
                 t == UnitType.LEVEL_TWO_PAINT_TOWER;
     }
+    static boolean canPaintReal(RobotController rc, MapLocation loc) throws GameActionException { // canPaint that checks for cost
+        int paintCap = rc.getPaint();
+        return paintCap > rc.getType().attackCost && rc.canPaint(loc);
+    } // We're gonna end up using this function twice: Moving this to utils
+
 }

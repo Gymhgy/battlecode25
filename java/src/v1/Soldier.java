@@ -129,7 +129,7 @@ public class Soldier {
         // Paint under self first... then 5x5
         // Paint under self
         MapLocation myLoc = rc.getLocation();
-        if (canPaintReal(rc, myLoc) && myLoc.isWithinDistanceSquared(curRuin.getMapLocation(), 8)){
+        if (Util.canPaintReal(rc, myLoc) && myLoc.isWithinDistanceSquared(curRuin.getMapLocation(), 8)){
             MapLocation delta = FastMath.minusVec(curRuin.getMapLocation(), myLoc);
             PaintType ideal = numToPaint(tower[delta.x + 2][delta.y + 2]);
             if (!rc.senseMapInfo(myLoc).getPaint().equals(ideal)) {
@@ -143,7 +143,7 @@ public class Soldier {
             for (int j = -2; j <= 2; j++) {
                 if (i == 0 && j == 0) continue;
                 MapLocation loc = FastMath.addVec(curRuin.getMapLocation(), new MapLocation(i, j));
-                if (canPaintReal(rc, loc)) {
+                if (Util.canPaintReal(rc, loc)) {
                     MapInfo mi = rc.senseMapInfo(loc);
                     PaintType ideal = numToPaint(tower[i + 2][j + 2]);
                     if (!mi.getPaint().equals(ideal) && rc.isActionReady()) {
@@ -175,7 +175,7 @@ public class Soldier {
 
     static void paintRandomly(RobotController rc) throws  GameActionException {
         MapLocation myLoc = rc.getLocation();
-        if(canPaintReal(rc, myLoc) && !rc.senseMapInfo(myLoc).getPaint().isAlly()) {
+        if(Util.canPaintReal(rc, myLoc) && !rc.senseMapInfo(myLoc).getPaint().isAlly()) {
             rc.attack(rc.getLocation(), trySRP(myLoc));
             return;
         }
@@ -183,7 +183,7 @@ public class Soldier {
         MapLocation[] ruins = rc.senseNearbyRuins(-1);
         MapLocation[] nearby = rc.getAllLocationsWithinRadiusSquared(rc.getLocation(), UnitType.SOLDIER.actionRadiusSquared);
         for (MapLocation loc : nearby) {
-            if (!canPaintReal(rc, loc)) continue;
+            if (!Util.canPaintReal(rc, loc)) continue;
             if (rc.senseMapInfo(loc).getPaint() == PaintType.EMPTY) {
                 rc.attack(loc, trySRP(loc));
                 return;
@@ -191,7 +191,7 @@ public class Soldier {
         }
         for(MapLocation loc : nearby) {
             boolean canOverwrite = true;
-            if (!canPaintReal(rc, loc)) continue;
+            if (!Util.canPaintReal(rc, loc)) continue;
             boolean ideal = trySRP(loc);
             if (rc.senseMapInfo(loc).getPaint().isSecondary() == ideal) {
                 continue;
@@ -215,9 +215,5 @@ public class Soldier {
             rc.setIndicatorLine(rc.getLocation(), curRuin.getMapLocation(), 255, 0, 0);
         }
         rc.setIndicatorString(indicator);
-    }
-    static boolean canPaintReal(RobotController rc, MapLocation loc) throws GameActionException { // canPaint that checks for cost
-        int paintCap = rc.getPaint();
-        return paintCap > rc.getType().attackCost && rc.canPaint(loc);
     }
 }
