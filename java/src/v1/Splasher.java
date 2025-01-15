@@ -70,7 +70,7 @@ public class Splasher {
         }
         int[][] coordinates = {
                 {0, 0}, {-1, 0}, {1, 0}, {0, -1}, {0, 1}, {-1, -1}, {-1, 1}, {1, -1}, {1, 1}, {-2, 0}, {2, 0}, {0, -2}, {0, 2}
-        };
+        }; // Evem if you change the coordinates to JUST {0, 2}, it still takes forever. Why?
         String c = "";
         for (MapInfo square: attackTiles) {
 
@@ -91,7 +91,7 @@ public class Splasher {
             /*  Brute Force:
             checker = tile.getMapLocation();
             for (MapInfo tile : nearbyTiles) {
-                if (loc.isWithinDistanceSquared(checker, 2)) { 
+                if (loc.isWithinDistanceSquared(checker, 2)) {
                 group[i] = tile;
                 i++;
             }
