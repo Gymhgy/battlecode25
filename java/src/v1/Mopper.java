@@ -21,7 +21,7 @@ public class Mopper {
             performAttack(rc);
         }
 
-        if (paintTower != null && moneyTower != null) {
+        if (target != null) {
             runRoute(rc);
         } else {
             wander(rc);
@@ -32,19 +32,22 @@ public class Mopper {
         if (rc.isActionReady()) {
             performAttack(rc);
         }
+
+        if(target != null)
+            rc.setIndicatorLine(rc.getLocation(), target, 255, 255, 0);
     }
 
     static void wander(RobotController rc) throws GameActionException {
         RobotInfo[] allies = rc.senseNearbyRobots(-1, rc.getTeam());
         for (RobotInfo ally : allies) {
             if (target == null) {
-                if (Util.isMoneyTower(ally.getType())) {
+                /*if (Util.isMoneyTower(ally.getType())) {
                     if (ally.getPaintAmount() < 300) {
                         target = ally.getLocation();
                         break;
                     }
                 }
-                 else if (ally.getType() == UnitType.SOLDIER) {
+                 else */ if (ally.getType() == UnitType.SOLDIER) {
                     if (ally.getPaintAmount() < 100) {
                         target = ally.getLocation();
                         break;
@@ -66,8 +69,9 @@ public class Mopper {
     }
 
     static void runRoute(RobotController rc) throws GameActionException {
-        if (rc.canSenseLocation(paintTower)) {
+        if (paintTower != null && rc.canSenseLocation(paintTower)) {
             if (rc.senseRobotAtLocation(paintTower) == null) {
+                paintTower = null;
                 wander(rc);
                 return;
             }
@@ -78,26 +82,29 @@ public class Mopper {
                 return;
             }
         }*/
+        if (rc.getPaint() <= 40 && paintTower != null) {
+            if (rc.canSenseLocation(paintTower) && rc.senseRobotAtLocation(paintTower).getPaintAmount() < 300) {
 
-        if (target == null) {
-            target = rc.getPaint() > 60 ? target : paintTower;
+            } else {
+                target = paintTower;
+            }
         }
 
         if (rc.getLocation().isAdjacentTo(target)) {
             RobotInfo tower = rc.senseRobotAtLocation(target);
             if (target.equals(paintTower)) {
                 int amount = UnitType.MOPPER.paintCapacity - rc.getPaint();
-                if (tower.getPaintAmount() >= amount) {
+                if (tower.getPaintAmount() >= (1 - (double)rc.getRoundNum() / 2000) * 300) {
                     if (rc.canTransferPaint(target, -amount)) {
                         rc.transferPaint(target, -amount);
                         target = null;
                     }
                 }
             } else {
-               if (rc.getPaint() >= 60) {
-                   if (rc.canTransferPaint(target, rc.getPaint() - 60)) {
-                       rc.transferPaint(target, rc.getPaint() - 60);
-                       target = paintTower;
+               if (rc.getPaint() >= 40) {
+                   if (rc.canTransferPaint(target, rc.getPaint() - 40)) {
+                       rc.transferPaint(target, rc.getPaint() - 40);
+                       target = null;
                    }
                }
             }
