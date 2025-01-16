@@ -60,7 +60,6 @@ public class Soldier {
             } else if (Util.isPaintTower(r.getType())){
                 lastPaintTower = r.getLocation();
             }
-
         }
         if (rc.getPaint() < 20 || refilling) {
             if ((lastMoneyTower != null && lastPaintTower == null) ||

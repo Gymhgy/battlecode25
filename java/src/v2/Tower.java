@@ -25,6 +25,7 @@ public class Tower {
     static int lastSeenServicer = 0;
 
     static void run(RobotController rc) throws GameActionException {
+        read(rc);
         RobotInfo[] allies = rc.senseNearbyRobots(-1, rc.getTeam());
         for (RobotInfo ally : allies) {
             // ...
@@ -82,6 +83,25 @@ public class Tower {
         servicerId = ri.getID();
         lastSeenServicer = rc.getRoundNum();
         //rc.sendMessage(loc, 1 << 31);
+    }
+    static void read(RobotController rc) throws GameActionException {
+        Message[] messages = rc.readMessages(-1);
+        for(Message m : messages) {
+            if ((m.getBytes() & 0b1111) == 1) {
+                // System.out.println(Integer.toBinaryString(m.getBytes()));
+                MapLocation enemyTower = new MapLocation((m.getBytes() & 0x000CFF0) / 16, (m.getBytes() & 0xFFFC0000) / 262144);
+                // System.out.println(enemyTower.toString());
+                Direction dir = directions[v1.fast.FastMath.rand256() % 8];
+                MapLocation nextLoc = rc.getLocation().add(dir);
+                if (rc.canBuildRobot(UnitType.SPLASHER, nextLoc)) {
+                    rc.buildRobot(UnitType.SPLASHER, nextLoc);
+                    if (rc.canSendMessage(nextLoc)) { // cant send message if not connected to paint! Tower surrounded by enemy paint
+                        rc.sendMessage(nextLoc, 1 + enemyTower.x * 16 + enemyTower.y * 262144);
+                        // otherwise, it just wanders. Since its next to enemy paint anyway, I think this is ok
+                    }
+                }
+            }
+        }
     }
 
     static void attackNearby(RobotController rc) throws GameActionException {

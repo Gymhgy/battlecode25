@@ -10,6 +10,7 @@ public class Mopper {
     private static MapLocation paintTower = null;
     private static MapLocation moneyTower = null;
     private static MapLocation target = null;
+    private static MapLocation enemyTower;
 
 
     static void init(RobotController rc) {
@@ -17,6 +18,9 @@ public class Mopper {
     }
 
     static void run(RobotController rc) throws GameActionException {
+        if (enemyTower != null) {
+            enemyTower = reportBack(rc);
+        }
         if (rc.isActionReady()) {
             performAttack(rc);
         }
@@ -39,6 +43,15 @@ public class Mopper {
 
     static void wander(RobotController rc) throws GameActionException {
         RobotInfo[] allies = rc.senseNearbyRobots(-1, rc.getTeam());
+        RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
+        for (RobotInfo enemy : enemies) {
+            if (enemy.getType().isTowerType() && !rc.senseMapInfo(enemy.getLocation()).getMark().isSecondary()) {
+                enemyTower = enemy.getLocation();
+                if (rc.canMark(enemy.getLocation())) {
+                    rc.mark(enemy.getLocation(), false); // Using primary mark to mark enemy towers
+                }
+            }
+        }
         for (RobotInfo ally : allies) {
             if (target == null) {
                 /*if (Util.isMoneyTower(ally.getType())) {
@@ -60,7 +73,7 @@ public class Mopper {
         }
 
         // If towers not found, wander randomly
-        if (paintTower == null || moneyTower == null) {
+        if (paintTower == null || moneyTower == null || enemyTower == null) {
             Pathfinding.navigateRandomly(rc);
         }
         else {
@@ -155,5 +168,24 @@ public class Mopper {
                 return;
             }
         }
+
+    }
+    private static MapLocation reportBack (RobotController rc) throws GameActionException{
+        if (paintTower != null) {
+            if (rc.canSendMessage(paintTower)) {
+                rc.sendMessage(paintTower, 1 + enemyTower.x * 16 + enemyTower.y * 262144);
+                // 1 for "enemy tower message"
+                // 4 bits for type, 2^4 at x, 2^18 at y
+                //System.out.println("Successful!");
+                return null;
+            }
+        } else if (moneyTower != null) {
+            if (rc.canSendMessage(moneyTower)) {
+                rc.sendMessage(moneyTower, 1 + enemyTower.x * 16 + enemyTower.y * 262144);
+                //System.out.println("Successful!");
+                return null;
+            }
+        }
+        return enemyTower;
     }
 }

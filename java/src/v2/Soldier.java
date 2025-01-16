@@ -39,13 +39,34 @@ public class Soldier {
     static MapInfo[] nearbyTiles;
     static RobotInfo[] nearbyRobots;
     static MapLocation curSRP = null;
+    static boolean refilling = false;
+    static MapLocation lastMoneyTower;
+    static MapLocation lastPaintTower;
     static void init(RobotController rc) throws GameActionException {
 
     }
 
     static void run(RobotController rc) throws GameActionException {
         nearbyTiles = rc.senseNearbyMapInfos();
+        nearbyRobots = rc.senseNearbyRobots();
         indicator = "";
+        for (RobotInfo r: nearbyRobots) {
+            if (v1.Util.isMoneyTower(r.getType())) {
+                lastMoneyTower = r.getLocation();
+            } else if (v1.Util.isPaintTower(r.getType())){
+                lastPaintTower = r.getLocation();
+            }
+        }
+        if (rc.getPaint() < 20 || refilling) {
+            if ((lastMoneyTower != null && lastPaintTower == null) ||
+                    (lastMoneyTower != null &&
+                            lastMoneyTower.distanceSquaredTo(rc.getLocation()) + 30 < lastPaintTower.distanceSquaredTo(rc.getLocation())) ){
+                // Checking for if its significantly less distance to go to lastMoneyTower
+                refilling = Util.refillPaint(rc, lastMoneyTower, -(200 - rc.getPaint()), 100);
+            } else {
+                refilling = Util.refillPaint(rc, lastPaintTower, -(200 - rc.getPaint()), 100);
+            }
+        }
         if (curRuin == null && rc.getNumberTowers() < 25) {
             for (MapInfo tile : nearbyTiles) {
                 if (tile.getMapLocation().isWithinDistanceSquared(rc.getLocation(), 2)) {
