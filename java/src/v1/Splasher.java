@@ -58,7 +58,7 @@ public class Splasher {
         return result;
     }
     private static void attackTower(RobotController rc) throws GameActionException {
-        System.out.println(target.toString());
+       // System.out.println(target.toString());
         if (rc.canAttack(target) && rc.isActionReady()) {
             rc.attack(target);
         } else {
