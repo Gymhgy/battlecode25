@@ -24,18 +24,31 @@ public class Splasher {
     }};
     private static int worth = 5; // leaving this here: easier to see and tweak
     private static int range = UnitType.SPLASHER.actionRadiusSquared;
+    private static boolean attacker;
 
     static void init(RobotController rc) {
-        var messages = rc.readMessages(-1); // What are messages used for?
+        Message[] messages = rc.readMessages(-1);
+        for (Message m: messages) {
+            //System.out.println(Integer.toBinaryString(m.getBytes()));
+            if ((m.getBytes() & 0b0001) == 1) {
+                attacker = true;
+                target = new MapLocation((m.getBytes() & 0x000CFF0) / 16, (m.getBytes() & 0xFFFC0000) / 262144);
+            }
+        }
     }
 
     static void run(RobotController rc) throws GameActionException {
-        if (rc.isActionReady()) {
-            performAttack(rc); // Behavior: Wander until
+        if (attacker) {
+            //System.out.println("hello");
+            attackTower(rc);
+        } else {
+            if (rc.isActionReady()) {
+                performAttack(rc); // We want to move towards enemy towers: how?
+            }
+            Pathfinding.navigateRandomly(rc);
         }
-        Pathfinding.navigateRandomly(rc);
     }
-    public static int worthQuota(RobotController rc, MapInfo[] sensed) throws GameActionException { // This Is this worth it ?
+    private static int worthQuota(RobotController rc, MapInfo[] sensed) throws GameActionException { // This Is this worth it ?
         int result = 0;
         for (MapInfo m : sensed)  {
             if (m != null && rc.onTheMap(m.getMapLocation())) {
@@ -43,6 +56,15 @@ public class Splasher {
             }
         }
         return result;
+    }
+    private static void attackTower(RobotController rc) throws GameActionException {
+        System.out.println(target.toString());
+        if (rc.canAttack(target) && rc.isActionReady()) {
+            rc.attack(target);
+        } else {
+            Pathfinding.moveToward(rc, target);
+        }
+
     }
 
 
@@ -132,4 +154,5 @@ public class Splasher {
         */
     }
 }
+
 

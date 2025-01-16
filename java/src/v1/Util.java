@@ -21,6 +21,36 @@ public class Util {
     static boolean canPaintReal(RobotController rc, MapLocation loc) throws GameActionException { // canPaint that checks for cost
         int paintCap = rc.getPaint();
         return paintCap > rc.getType().attackCost && rc.canPaint(loc);
-    } // We're gonna end up using this function twice: Moving this to utils
+    }
+    // We're gonna end up using refillPaint twice: Moving this to utils
+    static boolean refillPaint(RobotController rc, MapLocation loc, int amount, int threshold) throws GameActionException {
+        if (rc.canSenseRobotAtLocation(loc)) { // So many checks:
+            UnitType a = rc.senseRobotAtLocation(loc).getType();
+            if (isPaintTower(a)) {
+                if (rc.canTransferPaint(loc, amount)) {
+                    rc.transferPaint(loc, amount);
+                    return false;
+                } else {
+                    // wait?
+                }
+
+            }
+            else if (isMoneyTower(a)){
+                if (rc.canTransferPaint(loc, amount)) {
+                    rc.transferPaint(loc, amount);
+                    return false;
+                } else {
+                    Pathfinding.moveToward(rc, loc); // Have to wait for mopper refill.
+                }
+            }
+        }
+        if (rc.getPaint() > threshold) {
+            return false;
+        }
+        else {
+            Pathfinding.moveToward(rc, loc);
+        }
+        return true;
+    }
 
 }

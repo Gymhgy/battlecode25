@@ -10,6 +10,8 @@ public class Mopper {
     private static MapLocation paintTower = null;
     private static MapLocation moneyTower = null;
     private static MapLocation target = null;
+    private static MapLocation enemyTower;
+
 
 
     static void init(RobotController rc) {
@@ -17,6 +19,10 @@ public class Mopper {
     }
 
     static void run(RobotController rc) throws GameActionException {
+        towerScan(rc);
+        if (enemyTower != null) {
+            enemyTower = reportBack(rc);
+        }
         if (rc.isActionReady()) {
             performAttack(rc);
         }
@@ -26,8 +32,6 @@ public class Mopper {
         } else {
             wander(rc);
         }
-
-
 
         if (rc.isActionReady()) {
             performAttack(rc);
@@ -116,11 +120,21 @@ public class Mopper {
             Pathfinding.moveToward(rc, target);
         }
     }
+    static void towerScan(RobotController rc) throws GameActionException {
+        RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
+        for (RobotInfo enemy : enemies) {
+            if (enemy.getType().isTowerType() && !rc.senseMapInfo(enemy.getLocation()).getMark().isSecondary()) {
+                enemyTower = enemy.getLocation();
+                if (rc.canMark(enemy.getLocation())) {
+                    rc.mark(enemy.getLocation(), false); // Using primary mark to mark enemy towers
+                }
+            }
+        }
+    }
 
     static void performAttack(RobotController rc) throws GameActionException {
         RobotInfo[] enemies = rc.senseNearbyRobots(2, rc.getTeam().opponent());
         RobotInfo[] allies = rc.senseNearbyRobots(2, rc.getTeam());
-
         if (rc.getPaint() > 60) {
             for (RobotInfo ally : allies) {
                 if (ally.getType() == UnitType.SOLDIER) {
@@ -133,13 +147,15 @@ public class Mopper {
                 }
             }
         }
-
         for (RobotInfo enemy : enemies) {
             if (rc.senseMapInfo(enemy.getLocation()).getPaint().isEnemy()) {
-                rc.attack(enemy.getLocation());
+                if (rc.canAttack(enemy.getLocation())) {
+                    rc.attack(enemy.getLocation());
+                }
                 return;
             }
         }
+
 
         // TODO: Mop in the direction that hits the most enemy bots
         int maxHits = 0;
@@ -151,9 +167,29 @@ public class Mopper {
         // Attack any tile with enemy paint on it
         for (MapInfo loc : rc.senseNearbyMapInfos(2)) {
             if (loc.getPaint().isEnemy()) {
-                rc.attack(loc.getMapLocation());
-                return;
+                if(rc.canAttack(loc.getMapLocation())) {
+                    rc.attack(loc.getMapLocation());
+                    return;
+                }
             }
         }
+    }
+    private static MapLocation reportBack (RobotController rc) throws GameActionException{
+        if (paintTower != null) {
+            if (rc.canSendMessage(paintTower)) {
+                rc.sendMessage(paintTower, 1 + enemyTower.x * 16 + enemyTower.y * 262144);
+                // 1 for "enemy tower message"
+                // 4 bits for type, 2^4 at x, 2^18 at y
+                //System.out.println("Successful!");
+                return null;
+            }
+        } else if (moneyTower != null) {
+            if (rc.canSendMessage(moneyTower)) {
+                rc.sendMessage(moneyTower, 1 + enemyTower.x * 16 + enemyTower.y * 262144);
+                //System.out.println("Successful!");
+                return null;
+            }
+        }
+        return enemyTower;
     }
 }

@@ -35,16 +35,19 @@ public class Tower {
         if (rc.getRoundNum() - lastSeenServicer > 50) {
             servicerId = 0;
         }
+        read(rc);
+        /*
         int splasherSel = FastMath.rand256();
-        if (rc.getChips() > 3000 && splasherSel % 2 == 1) {
+        if (rc.getChips() > 2000 && splasherSel % 3 == 1) {
             UnitType type = UnitType.SPLASHER;
             Direction dir = directions[FastMath.rand256() % 8];
             MapLocation nextLoc = rc.getLocation().add(dir);
             if (rc.canBuildRobot(type, nextLoc)) {
                 rc.buildRobot(type, nextLoc);
             }
-        } else if (rc.getChips() > 1300) {
-
+        }
+         */
+        if (rc.getChips() > 1300) {
             if (rc.getChips() > 2000 && rc.getRoundNum() > 50 && Util.isPaintTower(rc.getType())) {
                 if (rc.canUpgradeTower(rc.getLocation())) {
                     rc.upgradeTower(rc.getLocation());
@@ -80,6 +83,25 @@ public class Tower {
             }
 
             attackNearby(rc);
+        }
+    }
+    static void read(RobotController rc) throws GameActionException {
+        Message[] messages = rc.readMessages(-1);
+        for(Message m : messages) {
+            if ((m.getBytes() & 0b1111) == 1) {
+                // System.out.println(Integer.toBinaryString(m.getBytes()));
+                MapLocation enemyTower = new MapLocation((m.getBytes() & 0x000CFF0) / 16, (m.getBytes() & 0xFFFC0000) / 262144);
+                // System.out.println(enemyTower.toString());
+                Direction dir = directions[FastMath.rand256() % 8];
+                MapLocation nextLoc = rc.getLocation().add(dir);
+                if (rc.canBuildRobot(UnitType.SPLASHER, nextLoc)) {
+                    rc.buildRobot(UnitType.SPLASHER, nextLoc);
+                    if (rc.canSendMessage(nextLoc)) { // cant send message if not connected to paint! Tower surrounded by enemy paint
+                        rc.sendMessage(nextLoc, 1 + enemyTower.x * 16 + enemyTower.y * 262144);
+                        // otherwise, it just wanders. Since its next to enemy paint anyway, I think this is ok
+                    }
+                }
+            }
         }
     }
 

@@ -42,13 +42,36 @@ public class Soldier {
     static MapLocation curSRP = null;
     static FastLocSet possibleSRPs = new FastLocSet();
     static String possibleSRPstr = "^\u0005\u001F^\u0003#^!7^#)^\u00066^$\"^+\u0019^ \u0002^&(^\"\b^#\u0015^\u001C\r\n^\u001A6^\u001E\u0010^\u0013\r\n^\u0016*^\u0012\r\n^\r\n$^\u0016\f^9\u0007^\u00119^\u000E\b^02^28^6\u0012^\u0002\f^\u0006\u000E^\u00037^\u00040^\u0007%^* ^-\u0015^+-^\u0018\u001C^$\u0004^'\u0017^\u00135^\u001A\"^9/^\u001E$^\u0011\u0011^\u000B'^9\u0011^\f ^\r\n\u001A^\u000B\u0013^3\u0013^\r\n\u0019^\u000E&^\u0004&^+\u0005^\u0007\u001B^$,^,\u001C^\u001F\t^\u001B9^\u00177^99^\b(^8\"^\u0010\u0018^\u0017-^\u001E8^\u0011%^\u0016\u0002^\b\u0014^\u000E0^0\r\n^2\u0010^7\u0015^5\u0005^(\u0006^\u0005)^73^\u00053^7)^,\u0012^/\u0007^&2^\u0019\u001F^%\u0007^&\u0014^\u001B\u0011^\u001D5^\u0017#^\u0013\u0003^\u0012\u0014^\u0017\u0019^\u0010,^\r\n#^\t\u0003^\f\u0016^4\u0016^0\u001E^(\u001A^//^\"0^  ^!-^%/^#3^-\u001F^\u0018\u0012^\u0013+^\u00164^\u0010\u0004^\u001D!^\t+^\u0011\u001B^\t\r\n^\u0017\u0005^\t\u0017^\u0003\u000F^5\u0019^3\t^\u0004\b^4\u0002^6\b^.\"^5-^*\u0002^/\u001B^(.^.\u0004^)1^'5^&\r\n^\u001C\u0014^\u001A\u0004^\u0019)^\u001E\u0006^\u001C2^\u001B/^\u0015\u001D^\u001C(^8\u0018^\u0014\u0006^\u0011/^\u000B1^\r\n\u0006^\u000F\u001F^1!^\u00024^2\u001A^.,^!#^!\u0005^$6^'+^%\u0011^&\u001E^\u001B\u0007^\u0014.^\u001E\u001A^\u0011\u0007^\u001F\u0013^\u0015\t^\r\n.^\b2^\u0012\u001E^\r\n-^\u000E\u0012^0(^\u000F\u000B^15^4\f^\u0005\u000B^31^\u0002 ^4*^\u0005\u0015^(\u0010^/%^ \u0016^**^+#^ \f^\u00079^%9^*4^-)^\u001A\u0018^\u0018\b^'\r\n^\u001D\u0017^\u00151^\u0013!^\u001A,^\u0014\u001A^\u001E.^\u001D+^9\u001B^\u000E\u001C^\f4^\u000B\t^2$^\u0003\u0005^\u0007\u0011^/\u0011^($^\"&^\u0007/^+7^,0^'\u0003^\u001D\u0003^\u001F\u001D^9%^8\u000E^\f*^\r\n\u0010^\u000F\u0015^1+^\r\n\u0005^\u000B\u001D^\u000F3^1\r\n^\u0003\u0019^5\u000F^/9^\u0004\u0012^44^\u0007\u0007^)\t^\u0006\u0018^6&^+\u000F^)\u0013^,\b^(8^\"\u0012^#\u000B^,&^!\u000F^\u0019\u000B^\u00180^86^\u0014$^\u0016\u0016^\u0010\"^\r\n8^\u0012(^\r\n7^\f\f^\u0002\u0016^0\u0014^7\u001F^\u0003-^3'^60^\u0002*^4 ^)\u001D^\u0006,^)'^!\u0019^#\u001F^$\u0018^-3^\u0019\u0015^\u001B\u001B^\u0013\u0017^\u0016 ^\u0014\u0010^\u00106^\f\u0002^2.^1\u0003^\u0002\u0002^\u0006\u0004^\u0004\u001C^ 4^7\u000B^57^*\f^ *^.\u000E^*\u0016^-\u000B^%%^$\u000E^\u001A\u000E^\u00148^\u00193^\u001D\r\n^\u001B%^\u0010\u000E^\u0015'^\t!^\b\r\n^\u001F1^8\u0004^\u0017\u000F^3\u001D^\r\n\u000F^\u000F)^1\u0017^6\u001C^.6^.\u0018^5#^\u0006\"^\"\u001C^'!^%\u001B^\u001C\u001E^\u0018&^8,^\u0015\u0013^\u001F'^\t5^\b\u001E^\u00122^2\u0006";
+    static MapLocation lastMoneyTower;
+    static MapLocation lastPaintTower;
+    static boolean refilling = false;
+
     static void init(RobotController rc) throws GameActionException {
         possibleSRPs.replace(possibleSRPstr);
     }
 
     static void run(RobotController rc) throws GameActionException {
         nearbyTiles = rc.senseNearbyMapInfos();
+        nearbyRobots = rc.senseNearbyRobots();
         indicator = "";
+        for (RobotInfo r: nearbyRobots) {
+            if (Util.isMoneyTower(r.getType())) {
+                lastMoneyTower = r.getLocation();
+            } else if (Util.isPaintTower(r.getType())){
+                lastPaintTower = r.getLocation();
+            }
+
+        }
+        if (rc.getPaint() < 20 || refilling) {
+            if ((lastMoneyTower != null && lastPaintTower == null) ||
+                    (lastMoneyTower != null &&
+                            lastMoneyTower.distanceSquaredTo(rc.getLocation()) + 30 < lastPaintTower.distanceSquaredTo(rc.getLocation())) ){
+                // Checking for if its significantly less distance to go to lastMoneyTower
+                refilling = Util.refillPaint(rc, lastMoneyTower, -(200 - rc.getPaint()), 100);
+            } else {
+                refilling = Util.refillPaint(rc, lastPaintTower, -(200 - rc.getPaint()), 100);
+            }
+        }
         if (curRuin == null && rc.getNumberTowers() < 25) {
             for (MapInfo tile : nearbyTiles) {
                 if (tile.getMapLocation().isWithinDistanceSquared(rc.getLocation(), 2)) {
