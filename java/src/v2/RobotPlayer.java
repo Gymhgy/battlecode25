@@ -52,6 +52,7 @@ public class RobotPlayer {
                     break;
                 case SPLASHER:
                     Splasher.init(rc);
+                    break;
                 case MOPPER:
                     Mopper.init(rc);
                     break;
@@ -89,6 +90,7 @@ public class RobotPlayer {
                         break;
                     case SPLASHER:
                         Splasher.run(rc);
+                        break;
                     case MOPPER:
                         Mopper.run(rc);
                         break;

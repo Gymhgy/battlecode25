@@ -1,57 +1,46 @@
 package v3;
 
 import battlecode.common.*;
+import v3.fast.FastLocIntMap;
 import v3.fast.FastLocSet;
-
-import java.util.HashMap;
 
 public class Splasher {
     private static FastLocSet allyPaintTowers = new FastLocSet();
     private static FastLocSet allyMoneyTowers = new FastLocSet();
 
-    private static MapLocation target = null;
+    static MapLocation target = null;
     private static MapInfo[] nearbyTiles;
-    private static final HashMap<PaintType, Integer> paintPriorityValues = new HashMap<PaintType, Integer>(){{
-        put(PaintType.ALLY_PRIMARY, 0);
-        put(PaintType.ALLY_SECONDARY, 0);
-        put(PaintType.ENEMY_PRIMARY, 2);
-        put(PaintType.ENEMY_SECONDARY, 2);
-        put(PaintType.EMPTY, 1);
-    }};
-    private static int worth = 5; // leaving this here: easier to see and tweak
+
+    private static int worthThreshold = 5; // leaving this here: easier to see and tweak
     private static int range = UnitType.SPLASHER.actionRadiusSquared;
-    private static boolean attacker;
-    static MapLocation closestEnemyTower;
 
     static void init(RobotController rc) {
         Refill.init(80);
     }
 
     static void run(RobotController rc) throws GameActionException {
-        Communicator.updatePaintTowers(rc);
-        Communicator.updateEnemyTowers(rc);
+        Communicator.update(rc);
         Communicator.relayEnemyTower(rc);
-
         boolean refilling = Refill.refill(rc);
-        if (refilling) return;
-
+        if (refilling) {
+            rc.setIndicatorDot(rc.getLocation(), 255, 0, 125);
+            rc.setIndicatorString("refilling");
+            return;
+        }
+        if (target != null && !Communicator.enemyTowers.contains(target)) target = null;
         if (target == null) target = Communicator.enemyTowers.closest(rc.getLocation());
-        if (target!=null && target.isWithinDistanceSquared(rc.getLocation(), 9)) {
+        if (target!=null) {
             attackTower(rc);
         }
         else {
-            performAttack(rc);
+            if(rc.isActionReady()) performAttack(rc);
+            Explorer.smartExplore(rc);
         }
+
+        if (target != null)
+            rc.setIndicatorLine(rc.getLocation(), target, 255, 255, 255);
     }
-    private static int worthQuota(RobotController rc, MapInfo[] sensed) throws GameActionException { // This Is this worth it ?
-        int result = 0;
-        for (MapInfo m : sensed)  {
-            if (m != null && rc.onTheMap(m.getMapLocation())) {
-                result += paintPriorityValues.get((m.getPaint()));
-            }
-        }
-        return result;
-    }
+
     private static void attackTower(RobotController rc) throws GameActionException {
         // System.out.println(target.toString());
         if (rc.canAttack(target) && rc.isActionReady()) {
@@ -61,6 +50,7 @@ public class Splasher {
                 Pathfinding.moveToward(rc, target);
             }
             else {
+                // TODO: Splasher micro
                 //kite(rc, target);
             }
         }
@@ -68,6 +58,14 @@ public class Splasher {
     }
 
 
+    private static int getWorth(MapInfo mi) {
+        PaintType pt = mi.getPaint();
+        //TODO: tweak this...
+        if (mi.hasRuin()) return 0;
+        if (pt.isAlly()) return 0;
+        if (pt.isEnemy()) return 2;
+        return 1;
+    }
 
     static void performAttack(RobotController rc) throws GameActionException {
             /*  RobotInfo[] enemies = rc.senseNearbyRobots(range, rc.getTeam().opponent());
@@ -78,79 +76,45 @@ public class Splasher {
         nearbyTiles = rc.senseNearbyMapInfos();
         MapInfo[] attackTiles = rc.senseNearbyMapInfos(range);
 
-        int i = 0;
-        MapInfo[] group = new MapInfo[13];
-        MapLocation loc;
-        MapLocation checker;
-        // Attempt 1: Hash tabling to save bytecode LMAO
-        // Still on 15000 Bytecode/turn...
-        HashMap<String, MapInfo> tileMap = new HashMap<>();
-        for (MapInfo tile : nearbyTiles) {
-            String key = tile.getMapLocation().x + "," + tile.getMapLocation().y;
-            tileMap.put(key, tile);
-        }
         int[][] coordinates = {
-                {0, 0}, {-1, 0}, {1, 0}, {0, -1}, {0, 1}, {-1, -1}, {-1, 1}, {1, -1}, {1, 1}, {-2, 0}, {2, 0}, {0, -2}, {0, 2}
-        }; // Evem if you change the coordinates to JUST {0, 2}, it still takes forever. Why?
-        String c = "";
+                {0, 0}, {-1, 0}, {1, 0}, {0, -1}, {0, 1},
+                {-1, -1}, {-1, 1}, {1, -1}, {1, 1}, {-2, 0},
+                {2, 0}, {0, -2}, {0, 2}
+        };
+        int bestWorth = 0;
+        MapLocation best = null;
+        FastLocIntMap cache = new FastLocIntMap();
+        String ind = "";
         for (MapInfo square: attackTiles) {
+            ind+=Clock.getBytecodeNum()+",";
 
-
-            loc = square.getMapLocation();
-
-            // Solution 1: Hash Table
-            for (int[] a : coordinates) {
-                c = (loc.x + a[0]) + "," + (loc.y + a[1]);
-                group[i] = tileMap.get(c);
-                i++;
-            }
-            i = 0;
-            /*
-            group = rc.senseNearbyMapInfos(loc, 2);
-            Easiest solution: probably the worst.
-             */
-            /*  Brute Force:
-            checker = tile.getMapLocation();
-            for (MapInfo tile : nearbyTiles) {
-                if (loc.isWithinDistanceSquared(checker, 2)) {
-                group[i] = tile;
-                i++;
-            }
-            }
-
-
-            */
-
-
-            if (canPaintReal(rc, loc) && worthQuota(rc, group) > worth) {
-                if (rc.canAttack(loc)) {
-                    int secondary = v3.fast.FastMath.rand256() % 2;
-                    rc.attack(loc, secondary == 1);
-                    return;
+            int worth = 0;
+            for (int i = coordinates.length; i-->0;){
+                MapLocation loc = square.getMapLocation().translate(coordinates[i][0], coordinates[i][1]);
+                if (!rc.canSenseLocation(loc)) continue;
+                MapInfo mi = rc.senseMapInfo(loc);
+                if (cache.contains(loc)) {
+                    worth += cache.getVal(loc);
+                }
+                else {
+                    int val = getWorth(mi);
+                    cache.add(loc, val);
+                    worth += val;
                 }
             }
-
-
-
-        }
-        return;
-
-        //Attempt 2: Brute force (same thing? Why is it so expensive?)
-        /*
-        for (MapInfo square : attackTiles) {
-            loc = square.getMapLocation();
-            group[0] = square;
-
-            if (Util.canPaintReal(rc, loc) && worthQuota(rc, group) > worth) {
-                if (rc.canAttack(loc)) {
-                    int secondary = FastMath.rand256() % 2;
-                    rc.attack(loc, secondary == 1);
-                }
+            if (worth > worthThreshold) {
+                best = square.getMapLocation();
+                bestWorth = worth;
+                break;
             }
-            i = 1;
+            ind+=Clock.getBytecodeNum()+" | ";
         }
-
-        */
+        rc.setIndicatorString(ind);
+        if (best != null && canPaintReal(rc, best) && bestWorth > worthThreshold) {
+            if (rc.canAttack(best)) {
+                rc.attack(best, false);
+            }
+        }
     }
     static boolean canPaintReal(RobotController rc, MapLocation loc) throws GameActionException { // canPaint that checks for cost
         int paintCap = rc.getPaint();

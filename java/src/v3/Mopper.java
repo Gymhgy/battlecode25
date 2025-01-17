@@ -23,8 +23,7 @@ public class Mopper {
         nearbyTiles = rc.senseNearbyMapInfos();
         nearbyRobots = rc.senseNearbyRobots();
         indicator = "";
-        Communicator.updatePaintTowers(rc);
-        Communicator.updateEnemyTowers(rc);
+        Communicator.update(rc);
         Communicator.relayEnemyTower(rc);
         boolean refilling = Refill.refill(rc);
         if (!refilling) if(rc.isActionReady()) refillSplasher(rc);

@@ -20,25 +20,10 @@ public class Communicator {
     // Enemy/Ally bit             MapLocation
 
     static FastLocSet paintTowers = new FastLocSet();
-    static void updatePaintTowers(RobotController rc) throws GameActionException {
-        RobotInfo[] nearby = rc.senseNearbyRobots(-1, rc.getTeam());
-        for (int i = nearby.length; i-->0; ) {
-            RobotInfo r = nearby[i];
-            if (Util.isPaintTower(r.getType())){
-                paintTowers.add(r.getLocation());
-            }
-        }
-    }
-
     static FastLocSet enemyTowers = new FastLocSet();
-    static void updateEnemyTowers(RobotController rc) throws GameActionException {
-        RobotInfo[] nearby = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
-        for (int i = nearby.length; i-->0; ) {
-            RobotInfo r = nearby[i];
-            if (!enemyTowers.contains(r.getLocation()))
-                queue.add(r.getLocation());
-            enemyTowers.add(r.getLocation());
-        }
+
+    static void update(RobotController rc) throws GameActionException {
+        MapLocation[] ruins = rc.senseNearbyRuins(-1);
         for (Message m : rc.readMessages(rc.getRoundNum()-1)) {
             MapLocation loc = int2loc(m.getBytes());
             donotsend.add(m.getSenderID(), m.getBytes());
@@ -47,8 +32,34 @@ public class Communicator {
                 queue.add(loc);
             }
         }
+        for (int i = ruins.length; i-->0; ) {
+            RobotInfo r = rc.senseRobotAtLocation(ruins[i]);
+            if (r == null) {
+                enemyTowers.remove(ruins[i]);
+                queue.remove(ruins[i]);
+            }
+            else if (rc.getTeam().equals(r.getTeam())) {
+                if (Util.isPaintTower(r.getType())){
+                    paintTowers.add(ruins[i]);
+                }
+                enemyTowers.remove(ruins[i]);
+                queue.remove(ruins[i]);
+                if (rc.getType() == UnitType.SPLASHER) {
+                    rc.setIndicatorLine(rc.getLocation(), ruins[i], 0, 0, 255);
+                    if (Splasher.target != null && enemyTowers.contains((Splasher.target))) {
+                        rc.setIndicatorDot(new MapLocation(0,0), 255, 255, 255);
+                    }
+                }
+            }
+            else {
+                if (!enemyTowers.contains(ruins[i]))
+                    queue.add(ruins[i]);
+                enemyTowers.add(ruins[i]);
+            }
+        }
 
     }
+
     // Bottom 12 bits are used for location
     // 0000 0000 0000 0000 0000 0000 0000 0000
     // _                        ______________

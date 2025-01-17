@@ -52,6 +52,7 @@ public class RobotPlayer {
                     break;
                 case SPLASHER:
                     Splasher.init(rc);
+                    break;
                 case MOPPER:
                     Mopper.init(rc);
                     break;
@@ -90,6 +91,7 @@ public class RobotPlayer {
                         break;
                     case SPLASHER:
                         Splasher.run(rc);
+                        break;
                     case MOPPER:
                         Mopper.run(rc);
                         break;
@@ -103,7 +105,6 @@ public class RobotPlayer {
                 e.printStackTrace();
 
             } finally {
-                endTurn(rc);
                 Clock.yield();
             }
         }
@@ -112,6 +113,5 @@ public class RobotPlayer {
     // For debug
     public static void endTurn(RobotController rc) {
         // Basically print stuff here
-        rc.setIndicatorString(indicator);
     }
 }

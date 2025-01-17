@@ -56,6 +56,12 @@ public class Tower {
 
         attackNearby(rc);
         letThePeopleKnow(rc);
+        MapLocation en = enemies.closest(rc.getLocation());
+        if (en != null) {
+            rc.setIndicatorLine(rc.getLocation(), en, 255, 255, 255);
+            rc.setIndicatorString(enemies.closest(rc.getLocation()).toString());
+            }
+        else rc.setIndicatorString(String.valueOf(enemies.size));
     }
 
 
@@ -81,7 +87,8 @@ public class Tower {
         for(Message m : messages) {
             MapLocation loc = Communicator.int2loc(m.getBytes());
             //if (!enemies.contains(loc)) queue.add(loc);
-            enemies.add(Communicator.int2loc(m.getBytes()));
+            if (loc.equals(rc.getLocation())) continue;
+            enemies.add(loc);
             donotsend.add(m.getSenderID(), m.getBytes());
         }
     }

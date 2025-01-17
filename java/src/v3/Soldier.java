@@ -51,8 +51,7 @@ public class Soldier {
         nearbyTiles = rc.senseNearbyMapInfos();
         nearbyRobots = rc.senseNearbyRobots();
         indicator = "";
-        Communicator.updatePaintTowers(rc);
-        Communicator.updateEnemyTowers(rc);
+        Communicator.update(rc);
         Communicator.relayEnemyTower(rc);
 
         if (closestEnemyTower == null) closestEnemyTower = Communicator.enemyTowers.closest(rc.getLocation());
