@@ -33,7 +33,7 @@ public class Tower {
             }
         }
 
-        if (rc.getChips() > 1300 || (rc.getRoundNum() > 100 && rc.getRoundNum()%3 == 0)) {
+        if (rc.getChips() > 1300) {
             Direction dir = directions[FastMath.rand256() % 8];
             MapLocation nextLoc = rc.getLocation().add(dir);
 
