@@ -24,7 +24,7 @@ public class Explorer {
 
     public static boolean smartExplore(RobotController rc) throws GameActionException {
 
-        if (!rc.canMove(exploreDirection)) {
+        if (!Pathfinding.canPass(rc, exploreDirection) || rc.isLocationOccupied(rc.getLocation().add(exploreDirection))) {
             // find new direction
             bufferLength = 0;
             for (int i = ORDINAL_DIRECTIONS.length; --i >= 0; ) {
@@ -44,7 +44,7 @@ public class Explorer {
                 exploreDirection = buffer[(int) (Math.random() * bufferLength)];
             }
         }
-        if (rc.canMove(exploreDirection)) {
+        if (rc.isMovementReady() && Pathfinding.canPass(rc, exploreDirection)) {
             rc.move(exploreDirection);
             return true;
         }

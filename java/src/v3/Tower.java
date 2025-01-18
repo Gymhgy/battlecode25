@@ -16,15 +16,22 @@ public class Tower {
             Direction.NORTHWEST,
     };
     static boolean og = false;
+    static MapLocation[] spawners;
+    static MapLocation center;
     static void init(RobotController rc) throws GameActionException {
         if (rc.getRoundNum() == 1) {
             og = true;
         }
+        center = new MapLocation(rc.getMapWidth()/2, rc.getMapHeight()/2);
+        spawners = rc.getAllLocationsWithinRadiusSquared(rc.getLocation(), 4);
     }
 
 
     static void run(RobotController rc) throws GameActionException {
         hearThePeopleSpeak(rc);
+        MapLocation en = enemies.closest(rc.getLocation());
+
+        rc.attack(null);
         RobotInfo[] allies = rc.senseNearbyRobots(-1, rc.getTeam());
 
         if (rc.getChips() > 2000 && rc.getRoundNum() > 50 && Util.isPaintTower(rc.getType())) {
@@ -34,8 +41,7 @@ public class Tower {
         }
 
         if (rc.getChips() > 1300) {
-            Direction dir = directions[FastMath.rand256() % 8];
-            MapLocation nextLoc = rc.getLocation().add(dir);
+
 
             UnitType type = UnitType.SOLDIER;
             if (og && rc.getRoundNum() < 20) {
@@ -49,26 +55,62 @@ public class Tower {
                 type = distr[FastMath.rand256() % distr.length];
             }
 
-            if (rc.canBuildRobot(type, nextLoc)) {
+            MapLocation nextLoc = decideOnSpawn(rc, en);
+            if (nextLoc != null && rc.canBuildRobot(type, nextLoc)) {
                 rc.buildRobot(type, nextLoc);
             }
         }
 
         attackNearby(rc);
         letThePeopleKnow(rc);
-        MapLocation en = enemies.closest(rc.getLocation());
         if (en != null) {
             rc.setIndicatorLine(rc.getLocation(), en, 255, 255, 255);
             rc.setIndicatorString(enemies.closest(rc.getLocation()).toString());
-            }
+        }
         else rc.setIndicatorString(String.valueOf(enemies.size));
     }
 
+    static MapLocation decideOnSpawn(RobotController rc, MapLocation enemy) throws GameActionException {
+        if (!rc.isActionReady() || spawners.length == 0) return null;
 
+        RobotInfo[] nearbyAllies = rc.senseNearbyRobots(-1, rc.getTeam());
+        FastLocSet adjacentLocs = new FastLocSet();
+
+        for (RobotInfo enemyRobot : nearbyAllies) {
+            for (Direction dir : Direction.allDirections()) {
+                adjacentLocs.add(enemyRobot.getLocation().add(dir));
+            }
+        }
+
+        MapLocation bestLocation = null;
+        int bestScore = Integer.MIN_VALUE;
+
+        for (MapLocation spawner : spawners) {
+            if (!rc.canBuildRobot(UnitType.SOLDIER, spawner)) continue;
+
+            int score = 0;
+
+            if (!adjacentLocs.contains(spawner)) {
+                score += 1000;
+            }
+
+            if (enemy != null) {
+                score -= spawner.distanceSquaredTo(enemy);
+            } else {
+                score -= spawner.distanceSquaredTo(center);
+            }
+
+            score += FastMath.rand256() % 10;
+            if (score > bestScore) {
+                bestScore = score;
+                bestLocation = spawner;
+            }
+        }
+        return bestLocation;
+    }
 
     static void attackNearby(RobotController rc) throws GameActionException {
         RobotInfo[] enemies = rc.senseNearbyRobots(rc.getType().actionRadiusSquared, rc.getTeam().opponent());
-        // TODO: check if AOE can do more damage
 
         for (RobotInfo enemy : enemies) {
             if (rc.isActionReady() && rc.canAttack(enemy.getLocation())) {

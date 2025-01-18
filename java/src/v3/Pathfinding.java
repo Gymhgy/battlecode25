@@ -346,6 +346,7 @@ public class Pathfinding {
 
     //TODO: Set this function up
     static boolean canPass(RobotController rc, MapLocation loc, Direction targetDir) throws GameActionException {
+        if (!rc.onTheMap(loc)) return false;
         if (loc.equals(rc.getLocation())) return true;
         if (!rc.canSenseLocation(loc)) return true;
         MapInfo mi = rc.senseMapInfo(loc);
@@ -354,7 +355,7 @@ public class Pathfinding {
         if (mi.hasRuin()) return false;
         if (rc.getType() == UnitType.MOPPER && mi.getPaint().isEnemy()) return false;
         if (rc.getType() == UnitType.MOPPER) {
-            for (RobotInfo r : rc.senseNearbyRobots(9, rc.getTeam().opponent())) {
+            for (RobotInfo r : rc.senseNearbyRobots(loc, 9, rc.getTeam().opponent())) {
                 if (r.getType().isTowerType()) {
                     return false;
                 }

@@ -1,6 +1,7 @@
 package v3;
 
 import battlecode.common.*;
+import v3.fast.FastIntSet;
 import v3.fast.FastLocSet;
 import v3.fast.FastMath;
 
@@ -37,7 +38,7 @@ public class Soldier {
     static String indicator = "";
     static MapInfo curRuin = null;
     static MapInfo[] nearbyTiles;
-    static RobotInfo[] nearbyRobots;
+    static RobotInfo[] nearbyAllies;
     static MapLocation curSRP = null;
     static MapLocation closestEnemyTower;
 
@@ -49,11 +50,11 @@ public class Soldier {
 
     static void run(RobotController rc) throws GameActionException {
         nearbyTiles = rc.senseNearbyMapInfos();
-        nearbyRobots = rc.senseNearbyRobots();
+        nearbyAllies = rc.senseNearbyRobots(-1, rc.getTeam());
         indicator = "";
         Communicator.update(rc);
         Communicator.relayEnemyTower(rc);
-
+        blacklistCleanup(rc);
         if (closestEnemyTower == null) closestEnemyTower = Communicator.enemyTowers.closest(rc.getLocation());
         if (closestEnemyTower!=null && closestEnemyTower.isWithinDistanceSquared(rc.getLocation(), 9)) {
             // soldier will attack... tower
@@ -68,7 +69,7 @@ public class Soldier {
                     if (tile.getMark().isSecondary()) {
                         curRuinType = UnitType.LEVEL_ONE_PAINT_TOWER;
                     } else {
-                        curRuinType = (FastMath.rand256() % 3 < 1) ?
+                        curRuinType = (FastMath.rand256() % 7 < 2) ?
                                 UnitType.LEVEL_ONE_PAINT_TOWER :
                                 UnitType.LEVEL_ONE_MONEY_TOWER;
                     }
@@ -206,7 +207,28 @@ public class Soldier {
         }
     }
 
+    static FastIntSet popTime = new FastIntSet();
+    static FastLocSet blacklist = new FastLocSet();
+    static void blacklistCleanup(RobotController rc) {
+        while (popTime.size > 0) {
+            if (rc.getRoundNum() - popTime.peek() > 10) {
+                popTime.pop();
+                blacklist.pop();
+            }
+            else break;
+        }
+    }
     static boolean ruinCheck(RobotController rc, MapInfo ruin) throws GameActionException {
+        if (blacklist.contains(ruin.getMapLocation())) return false;
+        if (!ruin.hasRuin()) return false;
+        boolean ret = ruinCheckOld(rc, ruin);
+        if (!ret) {
+            blacklist.add(ruin.getMapLocation());
+            popTime.add(rc.getRoundNum());
+        }
+        return ret;
+    }
+    static boolean ruinCheckOld(RobotController rc, MapInfo ruin) throws GameActionException {
         if (!ruin.hasRuin()) return false;
         MapLocation ruinLoc = ruin.getMapLocation();
 
@@ -247,6 +269,21 @@ public class Soldier {
                     PaintType pt = rc.senseMapInfo(loc).getPaint();
                     if (pt.isEnemy()) {
                         en++;
+
+                        boolean mopperNearby = false;
+
+                        for (RobotInfo nearbyRobot : nearbyAllies) {
+                            if (nearbyRobot.getLocation().isWithinDistanceSquared(loc, 9) &&
+                                    nearbyRobot.getType() == UnitType.MOPPER &&
+                                    nearbyRobot.getTeam() == rc.getTeam()) {
+                                mopperNearby = true;
+                                break;
+                            }
+                        }
+                        if (!mopperNearby) {
+                            return false;
+                        }
+
                     }
                     else if (pt == PaintType.EMPTY) {
                         empty++;
