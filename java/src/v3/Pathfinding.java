@@ -353,6 +353,13 @@ public class Pathfinding {
         if (mi.isWall()) return false;
         if (mi.hasRuin()) return false;
         if (rc.getType() == UnitType.MOPPER && mi.getPaint().isEnemy()) return false;
+        if (rc.getType() == UnitType.MOPPER) {
+            for (RobotInfo r : rc.senseNearbyRobots(9, rc.getTeam().opponent())) {
+                if (r.getType().isTowerType()) {
+                    return false;
+                }
+            }
+        }
         //if (rc.getType() == UnitType.MOPPER && mi.getPaint() == PaintType.EMPTY) return false;
 
         int adj = 0;

@@ -44,7 +44,7 @@ public class Soldier {
     static FastLocSet paintTowers = new FastLocSet();
 
     static void init(RobotController rc) throws GameActionException {
-        Refill.init(50);
+        Refill.init(80);
     }
 
     static void run(RobotController rc) throws GameActionException {
@@ -77,8 +77,17 @@ public class Soldier {
         }
         if (rc.getNumberTowers() == 25) curRuin = null;
 
-        boolean refilling = Refill.refill(rc);
-        if (refilling) return;
+        if (curRuin == null) {
+            boolean refilling = Refill.refill(rc);
+            if (refilling) return;
+        }
+        else {
+            int initial = Refill.minPaint;
+            Refill.minPaint = 10;
+            boolean refilling = Refill.refill(rc);
+            if (refilling) return;
+            Refill.minPaint = initial;
+        }
         if (curRuin != null) {
             if (curRuinType == UnitType.LEVEL_ONE_PAINT_TOWER && !curRuin.getMark().isSecondary()) {
                 MapLocation toMark = null;
@@ -157,7 +166,7 @@ public class Soldier {
     private static void tryBuildSRP(RobotController rc) throws GameActionException {
         if (rc.canCompleteResourcePattern(curSRP)) {
             rc.completeResourcePattern(curSRP);
-            badSRPs.add(curSRP);
+            //badSRPs.add(curSRP);
             curSRP = null;
             return;
         }
@@ -219,9 +228,9 @@ public class Soldier {
                 if (robot.getType() == UnitType.SOLDIER && robot.getTeam() == rc.getTeam()) {
                     soldierCount++;
                 }
-                if (rc.senseMapInfo(loc).getMark() == PaintType.ALLY_SECONDARY) {
-                    curRuinType = UnitType.LEVEL_ONE_PAINT_TOWER;
-                }
+            }
+            if (rc.senseMapInfo(loc).getMark() == PaintType.ALLY_SECONDARY) {
+                curRuinType = UnitType.LEVEL_ONE_PAINT_TOWER;
             }
 
             if (soldierCount >= 2 && !rc.getLocation().isWithinDistanceSquared(ruinLoc, 2)) {
@@ -246,13 +255,16 @@ public class Soldier {
             }
         }
         if (en >= 10) return false;
-        if (empty > rc.getPaint() * 5) return false;
+        if (empty > (rc.getPaint() * 5) / 1.5) return false;
         return true;
     }
 
     static void tryBuild(RobotController rc) throws GameActionException {
         if (rc.getChips() > 1000 && rc.canCompleteTowerPattern(curRuinType, curRuin.getMapLocation())) {
             rc.completeTowerPattern(curRuinType, curRuin.getMapLocation());
+            if(rc.canTransferPaint(curRuin.getMapLocation(), -Refill.getEmptyPaintAmount(rc))) {
+                rc.transferPaint(curRuin.getMapLocation(), -Refill.getEmptyPaintAmount(rc));
+            }
             curRuin = null;
             return;
         }
@@ -306,6 +318,7 @@ public class Soldier {
     static boolean canSRP(RobotController rc, MapLocation srpLoc) throws GameActionException {
         if (badSRPs.contains(srpLoc)) return false;
         if (!centerSRP(srpLoc)) return false;
+        if (rc.canSenseLocation(srpLoc) && rc.senseMapInfo(srpLoc).isResourcePatternCenter()) return false;
         if (!rc.getLocation().isWithinDistanceSquared(srpLoc, 2)) {
             int soldierCount = 0;
             // TODO: unroll this loop #2, uses so much bytecode rn

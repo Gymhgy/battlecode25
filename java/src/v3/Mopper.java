@@ -36,33 +36,57 @@ public class Mopper {
         if (rc.isActionReady()) performAttack(rc);
 
     }
-
     static void goTowardsEnemyPaint(RobotController rc) throws GameActionException {
         nearbyTiles = rc.senseNearbyMapInfos();
         MapLocation[] nearbyRuins = rc.senseNearbyRuins(-1);
-        int closestDistance = 1000000;
-        MapLocation target = null;
-        for (MapInfo tile : nearbyTiles) {
-            if (tile.getPaint().isEnemy()) {
-                MapLocation loc = tile.getMapLocation();
-                boolean aroundRuin = false;
-                for (int i = nearbyRuins.length; i-->0;){
-                    if (nearbyRuins[i].distanceSquaredTo(loc) <= 8) {
-                        aroundRuin = true;
-                        break;
-                    }
-                }
-                // Prioritize ruins or update closest target
-                int dist = rc.getLocation().distanceSquaredTo(loc);
-                if (aroundRuin || dist < closestDistance) {
-                    target = loc;
-                    closestDistance = dist;
-                    if (aroundRuin) break;
+        RobotInfo[] nearbyAllies = rc.senseNearbyRobots(-1, rc.getTeam());
+
+        // Precompute ruins with nearby soldiers
+        FastLocSet ruinsWithSoldiers = new FastLocSet();
+
+        for (MapLocation ruin : nearbyRuins) {
+            for (RobotInfo enemy : nearbyAllies) {
+                if (enemy.getType() == UnitType.SOLDIER && enemy.getLocation().distanceSquaredTo(ruin) <= 2) {
+                    ruinsWithSoldiers.add(ruin);
+                    break;
                 }
             }
         }
-        if (target != null)
+
+        int highestPriority = Integer.MIN_VALUE;
+        MapLocation target = null;
+
+        for (MapInfo tile : nearbyTiles) {
+            if (tile.getPaint().isEnemy()) {
+                MapLocation loc = tile.getMapLocation();
+
+                // Check priority
+                int priority = 1; // Default: Closest paint
+
+                for (MapLocation ruin : nearbyRuins) {
+                    if (ruin.distanceSquaredTo(loc) <= 8) {
+                        if (ruinsWithSoldiers.contains(ruin)) {
+                            priority = 3; // Near ruin with soldier
+                            break;
+                        } else {
+                            priority = 2; // Near ruin
+                        }
+                    }
+                }
+
+                int dist = rc.getLocation().distanceSquaredTo(loc);
+                if (priority > highestPriority || (priority == highestPriority && dist < rc.getLocation().distanceSquaredTo(target))) {
+                    target = loc;
+                    highestPriority = priority;
+                    if (priority == 3) break;
+                }
+            }
+        }
+
+        if (target != null) {
             Pathfinding.moveToward(rc, target);
+            rc.setIndicatorLine(rc.getLocation(), target, 155, 255, 155);
+        }
     }
 
     static boolean refillSplasher(RobotController rc) throws GameActionException {

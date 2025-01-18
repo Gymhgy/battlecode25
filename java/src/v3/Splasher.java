@@ -11,7 +11,7 @@ public class Splasher {
     static MapLocation target = null;
     private static MapInfo[] nearbyTiles;
 
-    private static int worthThreshold = 5; // leaving this here: easier to see and tweak
+    private static int worthThreshold = 6; // leaving this here: easier to see and tweak
     private static int range = UnitType.SPLASHER.actionRadiusSquared;
 
     static void init(RobotController rc) {
@@ -62,7 +62,7 @@ public class Splasher {
         PaintType pt = mi.getPaint();
         //TODO: tweak this...
         if (mi.hasRuin()) return 0;
-        if (pt.isAlly()) return 0;
+        if (pt.isAlly()) return -1;
         if (pt.isEnemy()) return 2;
         return 1;
     }
