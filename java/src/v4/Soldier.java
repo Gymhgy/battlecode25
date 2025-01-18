@@ -426,6 +426,7 @@ public class Soldier {
     }
 
     static void paintRandomly(RobotController rc) throws  GameActionException {
+        if (rc.getNumberTowers() < 3) return;
         MapLocation myLoc = rc.getLocation();
         MapInfo[] nearby = rc.senseNearbyMapInfos();
 

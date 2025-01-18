@@ -19,6 +19,7 @@ public class Util {
 
     static final int SRP_BUILDER = 4;
     public static boolean isSrpBuilder(RobotController rc, int id) {
+        if (rc.getNumberTowers() < 3) return false;
         double r = (double)(rc.getMapWidth() * rc.getMapHeight() - 400) / 3600;
         return rc.getRoundNum() > 30 + (1-r)*50 && id % SRP_BUILDER == 0;
     }
