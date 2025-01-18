@@ -3,6 +3,7 @@ package v3;
 import battlecode.common.*;
 import v3.fast.FastLocIntMap;
 import v3.fast.FastLocSet;
+import v3.fast.FastMath;
 
 public class Splasher {
     private static FastLocSet allyPaintTowers = new FastLocSet();
@@ -31,6 +32,8 @@ public class Splasher {
         if (target == null) target = Communicator.enemyTowers.closest(rc.getLocation());
         if (target!=null) {
             attackTower(rc);
+            attackTower(rc);
+            if(rc.isActionReady()) performAttack(rc);
         }
         else {
             if(rc.isActionReady()) performAttack(rc);
@@ -43,10 +46,18 @@ public class Splasher {
 
     private static void attackTower(RobotController rc) throws GameActionException {
         // System.out.println(target.toString());
-        if (rc.canAttack(target) && rc.isActionReady()) {
-            rc.attack(target);
+        if (FastMath.manhattan(rc.getLocation(), target) <= 4 && rc.isActionReady()) {
+            MapLocation bestAttackTile = null;
+            int bestValue = Integer.MIN_VALUE;
+
+            for (MapLocation loc : rc.getAllLocationsWithinRadiusSquared(rc.getLocation(), 4)) {
+                if (FastMath.manhattan(loc, target) <= 2 && rc.canAttack(loc)) {
+                    rc.attack(loc);
+                    break;
+                }
+            }
         } else {
-            if (!target.isWithinDistanceSquared(rc.getLocation(), 4)) {
+            if (FastMath.manhattan(rc.getLocation(), target) > 4) {
                 Pathfinding.moveToward(rc, target);
             }
             else {
@@ -54,7 +65,6 @@ public class Splasher {
                 //kite(rc, target);
             }
         }
-
     }
 
 
@@ -72,7 +82,6 @@ public class Splasher {
             RobotInfo[] allies = rc.senseNearbyRobots(range, rc.getTeam());
             I'm leaving enemies/allies here... even though it isn't used right now. */
         // TODO: Splashers deal 100 damage to towers (but not to robots)... so do we care about sensing nearby robots?
-
         nearbyTiles = rc.senseNearbyMapInfos();
         MapInfo[] attackTiles = rc.senseNearbyMapInfos(range);
 
@@ -86,8 +95,6 @@ public class Splasher {
         FastLocIntMap cache = new FastLocIntMap();
         String ind = "";
         for (MapInfo square: attackTiles) {
-            ind+=Clock.getBytecodeNum()+",";
-
             int worth = 0;
             for (int i = coordinates.length; i-->0;){
                 MapLocation loc = square.getMapLocation().translate(coordinates[i][0], coordinates[i][1]);

@@ -61,4 +61,9 @@ public class FastMath {
         MapLocation origin = new MapLocation(0,0);
         return origin.directionTo(a);
     }
+
+    public static int manhattan(MapLocation a, MapLocation b) {
+        return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+    }
+
 }

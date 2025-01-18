@@ -381,6 +381,10 @@ public class Soldier {
         for (int i = -2; i <= 2; i++) {
             for (int j = -2; j <= 2; j++) {
                 MapLocation loc = FastMath.addVec(srpLoc, new MapLocation(i, j));
+                if (!rc.onTheMap(loc)) {
+                    badSRPs.add(srpLoc);
+                    return false;
+                }
                 if (!rc.canSenseLocation(loc)) continue;
                 MapInfo mi = rc.senseMapInfo(loc);
                 if (mi.hasRuin() || mi.isWall()) {

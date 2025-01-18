@@ -44,12 +44,14 @@ public class Communicator {
                 }
                 enemyTowers.remove(ruins[i]);
                 queue.remove(ruins[i]);
+                /*
                 if (rc.getType() == UnitType.SPLASHER) {
                     rc.setIndicatorLine(rc.getLocation(), ruins[i], 0, 0, 255);
                     if (Splasher.target != null && enemyTowers.contains((Splasher.target))) {
                         rc.setIndicatorDot(new MapLocation(0,0), 255, 255, 255);
                     }
                 }
+                */
             }
             else {
                 if (!enemyTowers.contains(ruins[i]))
