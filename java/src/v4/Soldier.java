@@ -56,6 +56,8 @@ public class Soldier {
         Communicator.update(rc);
         Communicator.relayEnemyTower(rc);
         blacklistCleanup(rc);
+
+        if (closestEnemyTower != null && !Communicator.enemyTowers.contains(closestEnemyTower)) closestEnemyTower = null;
         if (closestEnemyTower == null) closestEnemyTower = Communicator.enemyTowers.closest(rc.getLocation());
         attackTower(rc);
         if (closestEnemyTower!=null && closestEnemyTower.isWithinDistanceSquared(rc.getLocation(), 16)) {
@@ -67,7 +69,7 @@ public class Soldier {
         }
         attackTower(rc);
         if (closestEnemyTower != null) {
-            rc.setIndicatorLine(rc.getLocation(), closestEnemyTower, 212, 124, 213);
+            rc.setIndicatorLine(rc.getLocation(), closestEnemyTower, 0, 0, 0);
         }
         if (curRuin == null && rc.getNumberTowers() < 25) {
             for (MapInfo tile : nearbyTiles) {
@@ -76,7 +78,10 @@ public class Soldier {
                 }
                 if (ruinCheck(rc, tile)) {
                     curRuin = tile;
-                    if (tile.getMark().isSecondary()) {
+                    if (rc.getRoundNum() < 20) {
+                        curRuinType = UnitType.LEVEL_ONE_MONEY_TOWER;
+                    }
+                    else if (tile.getMark().isSecondary()) {
                         curRuinType = UnitType.LEVEL_ONE_PAINT_TOWER;
                     } else {
                         curRuinType = (FastMath.rand256() % 7 < 2) ?
@@ -138,7 +143,11 @@ public class Soldier {
                     fill(rc);
                 }
                 else {
-                    Explorer.smartExplore(rc);
+                    if (closestEnemyTower != null) {
+                        Pathfinding.moveToward(rc, closestEnemyTower);
+                    } else {
+                        Explorer.smartExplore(rc);
+                    }
                     if(rc.isActionReady())
                         paintRandomly(rc);
                 }
@@ -146,6 +155,7 @@ public class Soldier {
         }
 
         supplyPaint(rc);
+        if (Util.shouldKMS(rc)) rc.disintegrate();;
         endTurn(rc);
     }
 
@@ -426,7 +436,6 @@ public class Soldier {
     }
 
     static void paintRandomly(RobotController rc) throws  GameActionException {
-        if (rc.getNumberTowers() < 3) return;
         MapLocation myLoc = rc.getLocation();
         MapInfo[] nearby = rc.senseNearbyMapInfos();
 
@@ -443,6 +452,7 @@ public class Soldier {
                 return;
             }
         }
+
         /*for(MapLocation loc : nearby) {
             boolean canOverwrite = true;
             if (!canPaintReal(rc, loc)) continue;

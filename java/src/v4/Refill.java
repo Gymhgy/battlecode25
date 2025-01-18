@@ -25,7 +25,7 @@ public class Refill {
     }
 
     static int getEmptyPaintAmount(RobotController rc) throws GameActionException {
-        return rc.getType().paintCapacity - rc.getPaint();
+        return (rc.getType().paintCapacity - rc.getPaint()) / 50 * 50;
     }
 
     static MapLocation closestRefillTower(RobotController rc, FastLocSet towers) throws GameActionException {

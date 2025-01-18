@@ -13,7 +13,7 @@ public class Mopper {
     static RobotInfo[] nearbyRobots;
     private static MapLocation enemyTower;
     static FastLocSet enemyTowers = new FastLocSet();
-
+    static MapLocation closestEnemyTower = null;
     static void init(RobotController rc) {
         Refill.init(40);
     }
@@ -25,15 +25,26 @@ public class Mopper {
         indicator = "";
         Communicator.update(rc);
         Communicator.relayEnemyTower(rc);
+
+        if (closestEnemyTower != null && !Communicator.enemyTowers.contains(closestEnemyTower)) closestEnemyTower = null;
+        if (closestEnemyTower == null) closestEnemyTower = Communicator.enemyTowers.closest(rc.getLocation());
+
         boolean refilling = Refill.refill(rc);
         if (!refilling) if(rc.isActionReady()) refillSplasher(rc);
         if (rc.isActionReady()) performAttack(rc);
         if (refilling) return;
         goTowardsEnemyPaint(rc);
-        if (rc.isMovementReady())
-            Explorer.smartExplore(rc);
+        if (rc.isMovementReady()) {
+            if (closestEnemyTower != null) {
+                Pathfinding.moveToward(rc, closestEnemyTower);
+            }
+            else {
+                Explorer.smartExplore(rc);
+            }
+        }
         if(rc.isActionReady()) refillSplasher(rc);
         if (rc.isActionReady()) performAttack(rc);
+        if (Util.shouldKMS(rc)) rc.disintegrate();;
 
     }
     static void goTowardsEnemyPaint(RobotController rc) throws GameActionException {
