@@ -144,12 +144,32 @@ public class Soldier {
                 Explorer.smartExplore(rc);
             }
             if(!isSrpBuilder || curSRP == null) {
-                if (rc.getID() % 4 < 2) {
+                /*if (rc.getID() % 4 < 2) {
                     Explorer.smartExplore(rc);
                     if(rc.isActionReady())
                         paintRandomly(rc);
                 }
                 else if (rc.getRoundNum() > (rc.getMapHeight() * rc.getMapWidth()) * 7 / 64 + 6 && rc.getID() % 4 == 2) {
+                    if (fill(rc)) {
+                        if (closestEnemyTower != null) {
+                            Pathfinding.moveToward(rc, closestEnemyTower);
+                        } else {
+                            Explorer.smartExplore(rc);
+                        }
+                        if(rc.isActionReady())
+                            paintRandomly(rc);
+                    }
+                }
+                else {
+                    if (closestEnemyTower != null) {
+                        Pathfinding.moveToward(rc, closestEnemyTower);
+                    } else {
+                        Explorer.smartExplore(rc);
+                    }
+                    if(rc.isActionReady())
+                        paintRandomly(rc);
+                }*/
+                if (rc.getRoundNum() > (rc.getMapHeight() * rc.getMapWidth()) * 7 / 64 + 6 && rc.getID() % 2 == 0) {
                     if (fill(rc)) {
                         if (closestEnemyTower != null) {
                             Pathfinding.moveToward(rc, closestEnemyTower);
@@ -230,7 +250,7 @@ public class Soldier {
     }
 
     private static void tryBuildSRP(RobotController rc) throws GameActionException {
-        if (rc.canCompleteResourcePattern(curSRP) && rc.getChips() > 1200) {
+        if (rc.canCompleteResourcePattern(curSRP)) {
             rc.completeResourcePattern(curSRP);
             //badSRPs.add(curSRP);
             curSRP = null;
