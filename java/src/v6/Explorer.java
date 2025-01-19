@@ -57,7 +57,6 @@ public class Explorer {
     private static final Double[] onTheMapProbeAngles = { -Math.PI/6, 0.0, Math.PI/6 };
     public static boolean reachedBorder(RobotController rc, double direction) {
         // On the map probing
-
         for (int i = onTheMapProbeLengths.length; --i >= 0; ) {
             double x = Math.cos(direction + onTheMapProbeAngles[i]) * onTheMapProbeLengths[i];
             double y = Math.sin(direction + onTheMapProbeAngles[i]) * onTheMapProbeLengths[i];

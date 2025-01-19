@@ -1,8 +1,8 @@
-package v6;
+package v7;
 
 import battlecode.common.*;
-import v6.fast.FastIntSet;
-import v6.fast.FastLocSet;
+import v7.fast.FastIntSet;
+import v7.fast.FastLocSet;
 
 public class Communicator {
 
@@ -47,9 +47,9 @@ public class Communicator {
     static FastLocSet paintTowers = new FastLocSet();
     static FastLocSet enemyTowers = new FastLocSet();
     static FastLocSet allies = new FastLocSet();
+    static FastLocSet targets = new FastLocSet();
     static void update(RobotController rc) throws GameActionException {
         ruins = rc.senseNearbyRuins(-1);
-
         for (Message m : rc.readMessages(rc.getRoundNum()-1)) {
             Info info = parse(m.getBytes());
             RobotPlayer.indicator += "<" + info +">";
@@ -83,7 +83,7 @@ public class Communicator {
                     paintTowers.add(ruins[i]); // this
                 }
                 if (enemyTowers.contains(ruins[i])) {
-                    queue.add(serialize(false, ruins[i])); // Again, what do we need queuefo
+                    queue.add(serialize(false, ruins[i])); // Again, what do we need queue for?
                     popTime.add(rc.getRoundNum());
                 }
                 enemyTowers.remove(ruins[i]);
@@ -119,14 +119,40 @@ public class Communicator {
 
     static FastIntSet queue = new FastIntSet();
     static FastIntSet popTime = new FastIntSet();
+
+    static FastIntSet actionPopTime = new FastIntSet();
     static FastLocSet donotsend = new FastLocSet();
+
+
+    public static void addTarget(MapLocation loc, RobotController rc) throws GameActionException {
+        if (!targets.contains(loc)) {
+            targets.add(loc);
+            actionPopTime.add(rc.getRoundNum());
+        }
+    }
+    static MapLocation relayTarget(RobotController rc) throws GameActionException {
+        // cleanup first asw
+        while (actionPopTime.size() > 0) {
+            if (rc.getRoundNum() - actionPopTime.peek() > 30) {
+                actionPopTime.pop();
+                targets.pop();
+            }
+            else break;
+        }
+        if (targets.size() > 0) {
+            actionPopTime.pop();
+            return targets.pop();
+        } else{
+            return null;
+        }
+    }
     static void relayEnemyTower(RobotController rc) throws GameActionException {
 
         // do a little bit of cleanup
         while (popTime.size > 0) {
             if (rc.getRoundNum() - popTime.peek() > 50) {
-                System.out.println(popTime.pop() + "Pop time");
-                System.out.println(queue.pop() + "What is in the queue? Does anyone know");
+                popTime.pop();
+                queue.pop();
             }
             else break;
         }
