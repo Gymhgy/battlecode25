@@ -7,7 +7,7 @@ public class SplasherMicro {
     // What do we want Splasher Micro to do?
     // Notes first:
     // Big Idea: Best case scenario, Splashers should NEVER wander.
-    // Keep track of 4 'Enemy Paint clumps" At all times. Add to heuristic for enemy detected, "Amount possible"
+    // Keep track of 5 potential targets. Add to heuristic for enemy detected, "Amount possible"
     public int INF = 100000;
     public MicroInfo[] targetInfo = new MicroInfo[5]; // 5 is arbitrary, might put more
     public boolean canAttack;

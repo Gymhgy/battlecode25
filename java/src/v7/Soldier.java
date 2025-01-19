@@ -202,10 +202,13 @@ public class Soldier {
         return false;
     }
 
+    public static MapLocation deadTower;
     static void attackTower(RobotController rc) throws GameActionException {
         if (closestEnemyTower == null) return;
         if (rc.canAttack(closestEnemyTower)) rc.attack(closestEnemyTower);
         if (rc.canSenseLocation(closestEnemyTower) && !rc.isLocationOccupied(closestEnemyTower)) {
+            deadTower = closestEnemyTower;
+            Communicator.addTarget(deadTower, rc);
             closestEnemyTower = null;
         }
     }

@@ -226,6 +226,7 @@ public class Soldier {
     }
 
 
+
     private static boolean fill(RobotController rc) throws GameActionException {
         MapInfo[] nearby = rc.senseNearbyMapInfos(UnitType.SOLDIER.actionRadiusSquared);
         int cnt = nearby.length;
