@@ -1,8 +1,8 @@
-package v6;
+package v7rf;
 
 import battlecode.common.*;
-import v6.fast.FastIntSet;
-import v6.fast.FastLocSet;
+import v7rf.fast.FastIntSet;
+import v7rf.fast.FastLocSet;
 
 public class Communicator {
 

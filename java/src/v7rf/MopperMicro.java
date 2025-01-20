@@ -1,6 +1,6 @@
-package v7;
+package v7rf;
 
-import v7.fast.FastLocIntMap;
+import v7rf.fast.FastLocIntMap;
 import battlecode.common.*;
 
 public class MopperMicro {
@@ -182,7 +182,7 @@ public class MopperMicro {
             if(canMove && !M.canMove) return true;
             if(!canMove && M.canMove) return false;
 
-            if (distanceToTarget != 0 && M.distanceToTarget != 0) {
+            if (distanceToTarget > 2 && M.distanceToTarget > 2) {
                 if (distanceToTarget < M.distanceToTarget) return true;
                 if (M.distanceToTarget < distanceToTarget) return false;
             }

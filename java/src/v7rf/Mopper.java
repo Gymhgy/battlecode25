@@ -1,7 +1,7 @@
-package v7;
+package v7rf;
 
 import battlecode.common.*;
-import v7.fast.FastLocSet;
+import v7rf.fast.FastLocSet;
 
 public class Mopper {
 
@@ -13,8 +13,8 @@ public class Mopper {
     static RobotInfo[] nearbyRobots;
     private static MapLocation enemyTower;
     static FastLocSet enemyTowers = new FastLocSet();
+    static MapLocation closestEnemyTower = null;
     static MopperMicro mopperMicro;
-
     static void init(RobotController rc) {
         Refill.init(40);
         mopperMicro = new MopperMicro(rc);
@@ -27,22 +27,36 @@ public class Mopper {
         indicator = "";
         Communicator.update(rc);
         Communicator.relayEnemyTower(rc);
+
+        if (closestEnemyTower != null && !Communicator.enemyTowers.contains(closestEnemyTower)) closestEnemyTower = null;
+        if (closestEnemyTower == null) closestEnemyTower = Communicator.enemyTowers.closest(rc.getLocation());
+
         boolean refilling = Refill.refill(rc);
         if (!refilling) if(rc.isActionReady()) refillSplasher(rc);
         if (rc.isActionReady()) performAttack(rc);
-        if (refilling) return;
+        if (refilling) {
+            endTurn(rc);
+            return;
+        }
         goTowardsEnemyPaint(rc);
-        if (rc.isMovementReady())
-            Explorer.smartExplore(rc);
+        if (rc.isMovementReady()) {
+            if (closestEnemyTower != null) {
+                Pathfinding.moveToward(rc, closestEnemyTower);
+            }
+            else {
+                Explorer.smartExplore(rc);
+            }
+        }
         if(rc.isActionReady()) refillSplasher(rc);
         if (rc.isActionReady()) performAttack(rc);
-
+        if (Util.shouldKMS(rc)) rc.disintegrate();;
+        endTurn(rc);
     }
-    // Wait, this doesn't actually move towards paint?
     static void goTowardsEnemyPaint(RobotController rc) throws GameActionException {
         nearbyTiles = rc.senseNearbyMapInfos();
         MapLocation[] nearbyRuins = rc.senseNearbyRuins(-1);
         RobotInfo[] nearbyAllies = rc.senseNearbyRobots(-1, rc.getTeam());
+
         // Precompute ruins with nearby soldiers
         FastLocSet ruinsWithSoldiers = new FastLocSet();
 
@@ -84,13 +98,14 @@ public class Mopper {
                 }
             }
         }
-
-        if (target != null && target.isAdjacentTo(rc.getLocation())) {
-            mopperMicro.doMicro(target);
-        } else {
-            Pathfinding.moveToward(rc, target);
+        if (target != null) {
+            if (target.isAdjacentTo(rc.getLocation())) {
+                mopperMicro.doMicro(target);
+            } else {
+                Pathfinding.moveToward(rc, target);
+            }
+            rc.setIndicatorLine(rc.getLocation(), target, 155, 255, 155);
         }
-        rc.setIndicatorLine(rc.getLocation(), target, 155, 255, 155);
     }
 
     static boolean refillSplasher(RobotController rc) throws GameActionException {
@@ -177,6 +192,9 @@ public class Mopper {
             }
         }
 
+    }
+    static void endTurn(RobotController rc) {
+        rc.setIndicatorString(RobotPlayer.indicator);
     }
 
 

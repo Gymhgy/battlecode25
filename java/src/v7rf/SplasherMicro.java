@@ -1,23 +1,13 @@
-package v7;
+package v7rf;
 
-import v7.fast.FastLocIntMap;
 import battlecode.common.*;
 
-public class MopperMicro {
+public class SplasherMicro {
 
     final int INF = 1000000;
-    static boolean shouldPlaySafe = false;
-    static int myRange;
-    static int myVisionRange;
-    static final int RANGE_LAUNCHER = 4;
-
-    //a) prioritize squares such that there are adjacent to enemy paint
-    //b) prioritize minimizing paint penalty
-    //c) prioritize staying on ally paint
-    //d) prioritize stay on neutral paint
-    //static double myDPS;
-    //static double[] DPS = new double[]{0, 0, 0, 0, 0, 0, 0};
-    //static int[] rangeExtended = new int[]{0, 0, 0, 0, 0, 0, 0};
+    boolean shouldPlaySafe = false;
+    static int myVisionRange = GameConstants.VISION_RADIUS_SQUARED;
+    static final int RANGE = UnitType.SOLDIER.actionRadiusSquared;
 
     static final Direction[] dirs = {
             Direction.NORTH,
@@ -34,27 +24,31 @@ public class MopperMicro {
     final static int MAX_MICRO_BYTECODE_REMAINING = 2000;
 
     static RobotController rc;
-    static FastLocIntMap cache;
-    static boolean canAttack;
-    MopperMicro(RobotController rc){
+
+    SplasherMicro(RobotController rc){
         this.rc = rc;
     }
 
-    public boolean doMicro(MapLocation target){
+    static boolean canAttack;
+
+    static boolean isTower = false;
+    static MapLocation enemyTower;
+    boolean doMicro(MapLocation target, boolean tower){
         try {
-            cache = new FastLocIntMap();
             if (!rc.isMovementReady()) return false;
+            isTower = tower;
             shouldPlaySafe = false;
             RobotInfo[] units = rc.senseNearbyRobots(myVisionRange, rc.getTeam().opponent());
 
             canAttack = rc.isActionReady();
+            enemyTower = target;
 
             MicroInfo[] microInfo = new MicroInfo[9];
-            for (int i = 0; i < 9; ++i) {
-                microInfo[i] = new MicroInfo(rc, dirs[i], target);
-            }
+            for (int i = 0; i < 9; ++i) microInfo[i] = new MicroInfo(dirs[i]);
+
             for (RobotInfo unit : units) {
                 if (Clock.getBytecodesLeft() < MAX_MICRO_BYTECODE_REMAINING) break;
+
                 microInfo[0].updateEnemy(unit);
                 microInfo[1].updateEnemy(unit);
                 microInfo[2].updateEnemy(unit);
@@ -69,6 +63,7 @@ public class MopperMicro {
             units = rc.senseNearbyRobots(myVisionRange, rc.getTeam());
             for (RobotInfo unit : units) {
                 if (Clock.getBytecodesLeft() < MAX_MICRO_BYTECODE_REMAINING) break;
+
                 microInfo[0].updateAlly(unit);
                 microInfo[1].updateAlly(unit);
                 microInfo[2].updateAlly(unit);
@@ -79,10 +74,12 @@ public class MopperMicro {
                 microInfo[7].updateAlly(unit);
                 microInfo[8].updateAlly(unit);
             }
+
             MicroInfo bestMicro = microInfo[8];
             for (int i = 0; i < 8; ++i) {
                 if (microInfo[i].isBetter(bestMicro)) bestMicro = microInfo[i];
             }
+
             if (bestMicro.dir == Direction.CENTER) return false;
 
             if (rc.canMove(bestMicro.dir)) {
@@ -96,53 +93,31 @@ public class MopperMicro {
         return false;
     }
 
-    public int paintScan(RobotController rc, MapLocation l) throws GameActionException {
-        int nearbyEnemyPaint = 0;
-        for (Direction dir : RobotPlayer.directions) {
-            MapLocation loc = l.add(dir);
-            if (!rc.canSenseLocation(loc)) continue;
-            MapInfo mi = rc.senseMapInfo(loc);
-            if (cache.contains(loc)) {
-                nearbyEnemyPaint += cache.getVal(loc);
-            }
-            else {
-                int val = mi.getPaint().isEnemy()? 1 : 0;
-                cache.add(loc, val);
-                nearbyEnemyPaint += val;
-            }
-        }
-        return nearbyEnemyPaint;
-    }
 
-    // Factors:
-    // Paint penalty: weighted as one
-    // Nearby Enemy paint: We take 2*(#number of nearby enemy tiles)
-    // minDistanceToEnemyPaint: weighted as 1* (negligible for nearby) EnemyPaint = target
-    //
+
     class MicroInfo {
         Direction dir;
         MapLocation location;
-        double minDistanceToEnemy = INF;
+        int numMoppers = 0;
         boolean canMove = true;
         int penalty = 0;
         PaintType pt;
         boolean inTowerRange = false;
-        int distanceToTarget;
-        int numMoppers = 0;
+        boolean canHitTower = false;
+        int distToTower = INF;
         int pti = 0;
-
-        public MicroInfo(RobotController rc, Direction dir, MapLocation target) throws GameActionException {
+        public MicroInfo(Direction dir) throws GameActionException {
             this.dir = dir;
             this.location = rc.getLocation().add(dir);
+
             if (dir != Direction.CENTER && !rc.canMove(dir)) {
                 canMove = false;
                 return;
             }
             MapInfo mi = rc.senseMapInfo(this.location);
-            distanceToTarget = target.distanceSquaredTo(this.location);
-            pt = rc.senseMapInfo(location).getPaint();
-
-
+            if (isTower && enemyTower.isWithinDistanceSquared(location, RANGE)) inTowerRange = true;
+            distToTower = enemyTower.distanceSquaredTo(location);
+            pt = mi.getPaint();
             if (pt.isEnemy()) {
                 penalty = 4;
                 pti = 2;
@@ -152,22 +127,12 @@ public class MopperMicro {
                 pti = 1;
             }
 
-            //paintScan(rc, location);
         }
 
         void updateEnemy(RobotInfo unit){
             if (!canMove) return;
-            if (unit.getType() == UnitType.SPLASHER) {
-                int dist = unit.getLocation().distanceSquaredTo(location);
-                if (dist < minDistanceToEnemy) minDistanceToEnemy = dist;
-            }
             if (unit.getType() == UnitType.MOPPER) {
-                if (unit.getLocation().isAdjacentTo(location)) numMoppers++;
-            }
-            if (!inTowerRange && unit.getType().isTowerType()) {
-                if (unit.getLocation().isWithinDistanceSquared(this.location, 9)) {
-                    inTowerRange = true;
-                }
+                if (unit.getLocation().isWithinDistanceSquared(location, 2)) numMoppers++;
             }
         }
 
@@ -177,18 +142,26 @@ public class MopperMicro {
                 penalty += pt.isEnemy() ? 2 : 1;
         }
 
+        // What info do we need to collect?
+        // Prioritize safety
+        // Then for the square that allows you to get good "worth"
+        // - lots of bytecode... we can approx via "num enemy paint seen"
+        // Then minimize penalties, etc.
+        // How far are we from target?
+        // type of paint
+        // how many enemy moppers
+        // paint penalty from allies
         //equal => true
-        public boolean isBetter (MicroInfo M) throws GameActionException {
+        boolean isBetter(MicroInfo M){
             if(canMove && !M.canMove) return true;
             if(!canMove && M.canMove) return false;
 
-            if (distanceToTarget != 0 && M.distanceToTarget != 0) {
-                if (distanceToTarget < M.distanceToTarget) return true;
-                if (M.distanceToTarget < distanceToTarget) return false;
-            }
-
             if (inTowerRange && !M.inTowerRange) return false;
             if (!inTowerRange && M.inTowerRange) return true;
+
+            //Aggressive...
+            if (distToTower < M.distToTower) return true;
+            if (M.distToTower < distToTower) return false;
 
             if (numMoppers < M.numMoppers) return true;
             if (M.numMoppers < numMoppers) return false;
@@ -201,11 +174,6 @@ public class MopperMicro {
 
             return true;
         }
-        public double valueHeuristic (MicroInfo M) throws GameActionException {
-            return M.penalty - M.minDistanceToEnemy - paintScan(rc, M.location);
-        }
-        // Prioritise low distance to Target, low paint penalty, low distance to Enemy
-        // tweak numbers later?
     }
 
 }
