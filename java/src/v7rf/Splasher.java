@@ -1,9 +1,9 @@
 package v7rf;
 
 import battlecode.common.*;
-import v7rf.fast.FastLocIntMap;
-import v7rf.fast.FastLocSet;
-import v7rf.fast.FastMath;
+import v7def.fast.FastLocIntMap;
+import v7def.fast.FastLocSet;
+import v7def.fast.FastMath;
 
 public class Splasher {
     private static FastLocSet allyPaintTowers = new FastLocSet();
@@ -12,6 +12,7 @@ public class Splasher {
     static MapLocation target = null;
     private static int range = UnitType.SPLASHER.actionRadiusSquared;
     static MapLocation prevNext = null;
+    int turnsSinceLast = 0;
     static SplasherMicro splasherMicro;
 
     static void init(RobotController rc) {
@@ -41,6 +42,7 @@ public class Splasher {
                 MapLocation next = survey(rc);
                 if (next != null) {
                     splasherMicro.doMicro(next, false);
+                    rc.setIndicatorLine(rc.getLocation(), next, 255, 10, 10);
                 } else {
                     Pathfinding.moveToward(rc, target);
                 }
@@ -53,10 +55,11 @@ public class Splasher {
             MapLocation next = survey(rc);
             if (next == null)
                 Explorer.smartExplore(rc);
-            //else if (prevNext != null && rc.getActionCooldownTurns() < 30)
-            //    Pathfinding.moveToward(rc, prevNext);
-            else
+                //else if (prevNext != null && rc.getActionCooldownTurns() < 30)
+                //    Pathfinding.moveToward(rc, prevNext);
+            else {
                 splasherMicro.doMicro(next, false);
+            }
 
             if (next != null)
                 rc.setIndicatorLine(rc.getLocation(), next, 255, 10, 10);
@@ -142,7 +145,7 @@ public class Splasher {
         //rc.setIndicatorString(ind);
         if (best != null && canPaintReal(rc, best) && bestWorth > worthThreshold) {
             if (rc.canAttack(best)) {
-                rc.attack(best, false);
+                rc.attack(best);
             }
         }
     }
@@ -161,82 +164,84 @@ public class Splasher {
         int w1, w2, w3, w4, w5, w6, w7, w8;
         w1=w2=w3=w4=w5=w6=w7=w8=0;
         MapLocation loc = rc.getLocation();
+        if(rc.canSenseLocation(loc.translate(0, 0)) &&
+                rc.senseMapInfo(loc.translate(0, 0)).getPaint().isEnemy()) w1++;
+        if(rc.canSenseLocation(loc.translate(0, 1)) &&
+                rc.senseMapInfo(loc.translate(0, 1)).getPaint().isEnemy()) w1++;
+        if(rc.canSenseLocation(loc.translate(0, 2)) &&
+                rc.senseMapInfo(loc.translate(0, 2)).getPaint().isEnemy()) w1++;
+        if(rc.canSenseLocation(loc.translate(1, 0)) &&
+                rc.senseMapInfo(loc.translate(1, 0)).getPaint().isEnemy()) w1++;
         if(rc.canSenseLocation(loc.translate(1, 1)) &&
                 rc.senseMapInfo(loc.translate(1, 1)).getPaint().isEnemy()) w1++;
         if(rc.canSenseLocation(loc.translate(1, 2)) &&
                 rc.senseMapInfo(loc.translate(1, 2)).getPaint().isEnemy()) w1++;
-        if(rc.canSenseLocation(loc.translate(1, 3)) &&
-                rc.senseMapInfo(loc.translate(1, 3)).getPaint().isEnemy()) w1++;
+        if(rc.canSenseLocation(loc.translate(2, 0)) &&
+                rc.senseMapInfo(loc.translate(2, 0)).getPaint().isEnemy()) w1++;
         if(rc.canSenseLocation(loc.translate(2, 1)) &&
                 rc.senseMapInfo(loc.translate(2, 1)).getPaint().isEnemy()) w1++;
         if(rc.canSenseLocation(loc.translate(2, 2)) &&
                 rc.senseMapInfo(loc.translate(2, 2)).getPaint().isEnemy()) w1++;
-        if(rc.canSenseLocation(loc.translate(2, 3)) &&
-                rc.senseMapInfo(loc.translate(2, 3)).getPaint().isEnemy()) w1++;
-        if(rc.canSenseLocation(loc.translate(3, 1)) &&
-                rc.senseMapInfo(loc.translate(3, 1)).getPaint().isEnemy()) w1++;
-        if(rc.canSenseLocation(loc.translate(3, 2)) &&
-                rc.senseMapInfo(loc.translate(3, 2)).getPaint().isEnemy()) w1++;
-        if(rc.canSenseLocation(loc.translate(3, 3)) &&
-                rc.senseMapInfo(loc.translate(3, 3)).getPaint().isEnemy()) w1++;
-
-        if(rc.canSenseLocation(loc.translate(-3, 1)) &&
-                rc.senseMapInfo(loc.translate(-3, 1)).getPaint().isEnemy()) w2++;
-        if(rc.canSenseLocation(loc.translate(-3, 2)) &&
-                rc.senseMapInfo(loc.translate(-3, 2)).getPaint().isEnemy()) w2++;
-        if(rc.canSenseLocation(loc.translate(-3, 3)) &&
-                rc.senseMapInfo(loc.translate(-3, 3)).getPaint().isEnemy()) w2++;
+        if(rc.canSenseLocation(loc.translate(-2, 0)) &&
+                rc.senseMapInfo(loc.translate(-2, 0)).getPaint().isEnemy()) w2++;
         if(rc.canSenseLocation(loc.translate(-2, 1)) &&
                 rc.senseMapInfo(loc.translate(-2, 1)).getPaint().isEnemy()) w2++;
         if(rc.canSenseLocation(loc.translate(-2, 2)) &&
                 rc.senseMapInfo(loc.translate(-2, 2)).getPaint().isEnemy()) w2++;
-        if(rc.canSenseLocation(loc.translate(-2, 3)) &&
-                rc.senseMapInfo(loc.translate(-2, 3)).getPaint().isEnemy()) w2++;
+        if(rc.canSenseLocation(loc.translate(-1, 0)) &&
+                rc.senseMapInfo(loc.translate(-1, 0)).getPaint().isEnemy()) w2++;
         if(rc.canSenseLocation(loc.translate(-1, 1)) &&
                 rc.senseMapInfo(loc.translate(-1, 1)).getPaint().isEnemy()) w2++;
         if(rc.canSenseLocation(loc.translate(-1, 2)) &&
                 rc.senseMapInfo(loc.translate(-1, 2)).getPaint().isEnemy()) w2++;
-        if(rc.canSenseLocation(loc.translate(-1, 3)) &&
-                rc.senseMapInfo(loc.translate(-1, 3)).getPaint().isEnemy()) w2++;
-
-        if(rc.canSenseLocation(loc.translate(1, -3)) &&
-                rc.senseMapInfo(loc.translate(1, -3)).getPaint().isEnemy()) w3++;
+        if(rc.canSenseLocation(loc.translate(0, 0)) &&
+                rc.senseMapInfo(loc.translate(0, 0)).getPaint().isEnemy()) w2++;
+        if(rc.canSenseLocation(loc.translate(0, 1)) &&
+                rc.senseMapInfo(loc.translate(0, 1)).getPaint().isEnemy()) w2++;
+        if(rc.canSenseLocation(loc.translate(0, 2)) &&
+                rc.senseMapInfo(loc.translate(0, 2)).getPaint().isEnemy()) w2++;
+        if(rc.canSenseLocation(loc.translate(0, -2)) &&
+                rc.senseMapInfo(loc.translate(0, -2)).getPaint().isEnemy()) w3++;
+        if(rc.canSenseLocation(loc.translate(0, -1)) &&
+                rc.senseMapInfo(loc.translate(0, -1)).getPaint().isEnemy()) w3++;
+        if(rc.canSenseLocation(loc.translate(0, 0)) &&
+                rc.senseMapInfo(loc.translate(0, 0)).getPaint().isEnemy()) w3++;
         if(rc.canSenseLocation(loc.translate(1, -2)) &&
                 rc.senseMapInfo(loc.translate(1, -2)).getPaint().isEnemy()) w3++;
         if(rc.canSenseLocation(loc.translate(1, -1)) &&
                 rc.senseMapInfo(loc.translate(1, -1)).getPaint().isEnemy()) w3++;
-        if(rc.canSenseLocation(loc.translate(2, -3)) &&
-                rc.senseMapInfo(loc.translate(2, -3)).getPaint().isEnemy()) w3++;
+        if(rc.canSenseLocation(loc.translate(1, 0)) &&
+                rc.senseMapInfo(loc.translate(1, 0)).getPaint().isEnemy()) w3++;
         if(rc.canSenseLocation(loc.translate(2, -2)) &&
                 rc.senseMapInfo(loc.translate(2, -2)).getPaint().isEnemy()) w3++;
         if(rc.canSenseLocation(loc.translate(2, -1)) &&
                 rc.senseMapInfo(loc.translate(2, -1)).getPaint().isEnemy()) w3++;
-        if(rc.canSenseLocation(loc.translate(3, -3)) &&
-                rc.senseMapInfo(loc.translate(3, -3)).getPaint().isEnemy()) w3++;
-        if(rc.canSenseLocation(loc.translate(3, -2)) &&
-                rc.senseMapInfo(loc.translate(3, -2)).getPaint().isEnemy()) w3++;
-        if(rc.canSenseLocation(loc.translate(3, -1)) &&
-                rc.senseMapInfo(loc.translate(3, -1)).getPaint().isEnemy()) w3++;
-
-        if(rc.canSenseLocation(loc.translate(-3, -3)) &&
-                rc.senseMapInfo(loc.translate(-3, -3)).getPaint().isEnemy()) w4++;
-        if(rc.canSenseLocation(loc.translate(-3, -2)) &&
-                rc.senseMapInfo(loc.translate(-3, -2)).getPaint().isEnemy()) w4++;
-        if(rc.canSenseLocation(loc.translate(-3, -1)) &&
-                rc.senseMapInfo(loc.translate(-3, -1)).getPaint().isEnemy()) w4++;
-        if(rc.canSenseLocation(loc.translate(-2, -3)) &&
-                rc.senseMapInfo(loc.translate(-2, -3)).getPaint().isEnemy()) w4++;
+        if(rc.canSenseLocation(loc.translate(2, 0)) &&
+                rc.senseMapInfo(loc.translate(2, 0)).getPaint().isEnemy()) w3++;
         if(rc.canSenseLocation(loc.translate(-2, -2)) &&
                 rc.senseMapInfo(loc.translate(-2, -2)).getPaint().isEnemy()) w4++;
         if(rc.canSenseLocation(loc.translate(-2, -1)) &&
                 rc.senseMapInfo(loc.translate(-2, -1)).getPaint().isEnemy()) w4++;
-        if(rc.canSenseLocation(loc.translate(-1, -3)) &&
-                rc.senseMapInfo(loc.translate(-1, -3)).getPaint().isEnemy()) w4++;
+        if(rc.canSenseLocation(loc.translate(-2, 0)) &&
+                rc.senseMapInfo(loc.translate(-2, 0)).getPaint().isEnemy()) w4++;
         if(rc.canSenseLocation(loc.translate(-1, -2)) &&
                 rc.senseMapInfo(loc.translate(-1, -2)).getPaint().isEnemy()) w4++;
         if(rc.canSenseLocation(loc.translate(-1, -1)) &&
                 rc.senseMapInfo(loc.translate(-1, -1)).getPaint().isEnemy()) w4++;
-
+        if(rc.canSenseLocation(loc.translate(-1, 0)) &&
+                rc.senseMapInfo(loc.translate(-1, 0)).getPaint().isEnemy()) w4++;
+        if(rc.canSenseLocation(loc.translate(0, -2)) &&
+                rc.senseMapInfo(loc.translate(0, -2)).getPaint().isEnemy()) w4++;
+        if(rc.canSenseLocation(loc.translate(0, -1)) &&
+                rc.senseMapInfo(loc.translate(0, -1)).getPaint().isEnemy()) w4++;
+        if(rc.canSenseLocation(loc.translate(0, 0)) &&
+                rc.senseMapInfo(loc.translate(0, 0)).getPaint().isEnemy()) w4++;
+        if(rc.canSenseLocation(loc.translate(1, -1)) &&
+                rc.senseMapInfo(loc.translate(1, -1)).getPaint().isEnemy()) w5++;
+        if(rc.canSenseLocation(loc.translate(1, 0)) &&
+                rc.senseMapInfo(loc.translate(1, 0)).getPaint().isEnemy()) w5++;
+        if(rc.canSenseLocation(loc.translate(1, 1)) &&
+                rc.senseMapInfo(loc.translate(1, 1)).getPaint().isEnemy()) w5++;
         if(rc.canSenseLocation(loc.translate(2, -1)) &&
                 rc.senseMapInfo(loc.translate(2, -1)).getPaint().isEnemy()) w5++;
         if(rc.canSenseLocation(loc.translate(2, 0)) &&
@@ -249,19 +254,6 @@ public class Splasher {
                 rc.senseMapInfo(loc.translate(3, 0)).getPaint().isEnemy()) w5++;
         if(rc.canSenseLocation(loc.translate(3, 1)) &&
                 rc.senseMapInfo(loc.translate(3, 1)).getPaint().isEnemy()) w5++;
-        if(rc.canSenseLocation(loc.translate(4, -1)) &&
-                rc.senseMapInfo(loc.translate(4, -1)).getPaint().isEnemy()) w5++;
-        if(rc.canSenseLocation(loc.translate(4, 0)) &&
-                rc.senseMapInfo(loc.translate(4, 0)).getPaint().isEnemy()) w5++;
-        if(rc.canSenseLocation(loc.translate(4, 1)) &&
-                rc.senseMapInfo(loc.translate(4, 1)).getPaint().isEnemy()) w5++;
-
-        if(rc.canSenseLocation(loc.translate(-4, -1)) &&
-                rc.senseMapInfo(loc.translate(-4, -1)).getPaint().isEnemy()) w6++;
-        if(rc.canSenseLocation(loc.translate(-4, 0)) &&
-                rc.senseMapInfo(loc.translate(-4, 0)).getPaint().isEnemy()) w6++;
-        if(rc.canSenseLocation(loc.translate(-4, 1)) &&
-                rc.senseMapInfo(loc.translate(-4, 1)).getPaint().isEnemy()) w6++;
         if(rc.canSenseLocation(loc.translate(-3, -1)) &&
                 rc.senseMapInfo(loc.translate(-3, -1)).getPaint().isEnemy()) w6++;
         if(rc.canSenseLocation(loc.translate(-3, 0)) &&
@@ -274,57 +266,62 @@ public class Splasher {
                 rc.senseMapInfo(loc.translate(-2, 0)).getPaint().isEnemy()) w6++;
         if(rc.canSenseLocation(loc.translate(-2, 1)) &&
                 rc.senseMapInfo(loc.translate(-2, 1)).getPaint().isEnemy()) w6++;
-
+        if(rc.canSenseLocation(loc.translate(-1, -1)) &&
+                rc.senseMapInfo(loc.translate(-1, -1)).getPaint().isEnemy()) w6++;
+        if(rc.canSenseLocation(loc.translate(-1, 0)) &&
+                rc.senseMapInfo(loc.translate(-1, 0)).getPaint().isEnemy()) w6++;
+        if(rc.canSenseLocation(loc.translate(-1, 1)) &&
+                rc.senseMapInfo(loc.translate(-1, 1)).getPaint().isEnemy()) w6++;
+        if(rc.canSenseLocation(loc.translate(-1, 1)) &&
+                rc.senseMapInfo(loc.translate(-1, 1)).getPaint().isEnemy()) w7++;
         if(rc.canSenseLocation(loc.translate(-1, 2)) &&
                 rc.senseMapInfo(loc.translate(-1, 2)).getPaint().isEnemy()) w7++;
         if(rc.canSenseLocation(loc.translate(-1, 3)) &&
                 rc.senseMapInfo(loc.translate(-1, 3)).getPaint().isEnemy()) w7++;
-        if(rc.canSenseLocation(loc.translate(-1, 4)) &&
-                rc.senseMapInfo(loc.translate(-1, 4)).getPaint().isEnemy()) w7++;
+        if(rc.canSenseLocation(loc.translate(0, 1)) &&
+                rc.senseMapInfo(loc.translate(0, 1)).getPaint().isEnemy()) w7++;
         if(rc.canSenseLocation(loc.translate(0, 2)) &&
                 rc.senseMapInfo(loc.translate(0, 2)).getPaint().isEnemy()) w7++;
         if(rc.canSenseLocation(loc.translate(0, 3)) &&
                 rc.senseMapInfo(loc.translate(0, 3)).getPaint().isEnemy()) w7++;
-        if(rc.canSenseLocation(loc.translate(0, 4)) &&
-                rc.senseMapInfo(loc.translate(0, 4)).getPaint().isEnemy()) w7++;
+        if(rc.canSenseLocation(loc.translate(1, 1)) &&
+                rc.senseMapInfo(loc.translate(1, 1)).getPaint().isEnemy()) w7++;
         if(rc.canSenseLocation(loc.translate(1, 2)) &&
                 rc.senseMapInfo(loc.translate(1, 2)).getPaint().isEnemy()) w7++;
         if(rc.canSenseLocation(loc.translate(1, 3)) &&
                 rc.senseMapInfo(loc.translate(1, 3)).getPaint().isEnemy()) w7++;
-        if(rc.canSenseLocation(loc.translate(1, 4)) &&
-                rc.senseMapInfo(loc.translate(1, 4)).getPaint().isEnemy()) w7++;
-
-        if(rc.canSenseLocation(loc.translate(-1, -4)) &&
-                rc.senseMapInfo(loc.translate(-1, -4)).getPaint().isEnemy()) w8++;
         if(rc.canSenseLocation(loc.translate(-1, -3)) &&
                 rc.senseMapInfo(loc.translate(-1, -3)).getPaint().isEnemy()) w8++;
         if(rc.canSenseLocation(loc.translate(-1, -2)) &&
                 rc.senseMapInfo(loc.translate(-1, -2)).getPaint().isEnemy()) w8++;
-        if(rc.canSenseLocation(loc.translate(0, -4)) &&
-                rc.senseMapInfo(loc.translate(0, -4)).getPaint().isEnemy()) w8++;
+        if(rc.canSenseLocation(loc.translate(-1, -1)) &&
+                rc.senseMapInfo(loc.translate(-1, -1)).getPaint().isEnemy()) w8++;
         if(rc.canSenseLocation(loc.translate(0, -3)) &&
                 rc.senseMapInfo(loc.translate(0, -3)).getPaint().isEnemy()) w8++;
         if(rc.canSenseLocation(loc.translate(0, -2)) &&
                 rc.senseMapInfo(loc.translate(0, -2)).getPaint().isEnemy()) w8++;
-        if(rc.canSenseLocation(loc.translate(1, -4)) &&
-                rc.senseMapInfo(loc.translate(1, -4)).getPaint().isEnemy()) w8++;
+        if(rc.canSenseLocation(loc.translate(0, -1)) &&
+                rc.senseMapInfo(loc.translate(0, -1)).getPaint().isEnemy()) w8++;
         if(rc.canSenseLocation(loc.translate(1, -3)) &&
                 rc.senseMapInfo(loc.translate(1, -3)).getPaint().isEnemy()) w8++;
         if(rc.canSenseLocation(loc.translate(1, -2)) &&
                 rc.senseMapInfo(loc.translate(1, -2)).getPaint().isEnemy()) w8++;
+        if(rc.canSenseLocation(loc.translate(1, -1)) &&
+                rc.senseMapInfo(loc.translate(1, -1)).getPaint().isEnemy()) w8++;
+
 
         int[] arr = {w1, w2, w3, w4, w5, w6, w7, w8};
         int max = 0;
         for (int i = 8; i-->0;) max = Math.max(max, arr[i]);
         if (max < 4) return null;
-        if (w1 == max) return loc.translate(2, 2);
-        if (w2 == max) return loc.translate(-2, 2);
-        if (w3 == max) return loc.translate(2, -2);
-        if (w4 == max) return loc.translate(-2, -2);
-        if (w5 == max) return loc.translate(3, 0);
-        if (w6 == max) return loc.translate(-3, 0);
-        if (w7 == max) return loc.translate(0, 3);
-        if (w8 == max) return loc.translate(0, -3);
+        if (w1 == max) return loc.translate(1, 1);
+        if (w2 == max) return loc.translate(-1, 1);
+        if (w3 == max) return loc.translate(1, -1);
+        if (w4 == max) return loc.translate(-1, -1);
+        if (w5 == max) return loc.translate(2, 0);
+        if (w6 == max) return loc.translate(-2, 0);
+        if (w7 == max) return loc.translate(0, 2);
+        if (w8 == max) return loc.translate(0, -2);
 
         return null;
     }
