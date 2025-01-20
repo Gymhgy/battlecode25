@@ -2,6 +2,7 @@ package v7rf;
 
 import battlecode.common.Direction;
 import battlecode.common.GameActionException;
+import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import v7rf.fast.FastMath;
 
@@ -24,7 +25,29 @@ public class Explorer {
         exploreDirection = ORDINAL_DIRECTIONS[FastMath.rand256() % 8];
     }
 
+    static int turnsSinceRandomTargetChange = 0;
+    static MapLocation target;
     public static boolean smartExplore(RobotController rc) throws GameActionException {
+        turnsSinceRandomTargetChange++;
+        if(target == null || rc.getLocation().distanceSquaredTo(target) < 5 ||
+                turnsSinceRandomTargetChange > rc.getMapWidth() + rc.getMapHeight()) {
+            int targetX = FastMath.rand256() % rc.getMapWidth();
+            int targetY = FastMath.rand256() % rc.getMapHeight();
+            target = new MapLocation(targetX, targetY);
+            turnsSinceRandomTargetChange = 0;
+        }
+        Pathfinding.moveToward(rc, target);
+        if(rc.isMovementReady()) {
+            int targetX = FastMath.rand256() % rc.getMapWidth();
+            int targetY = FastMath.rand256() % rc.getMapHeight();
+            target = new MapLocation(targetX, targetY);
+            return false;
+        }
+        return true;
+    }
+
+
+    public static boolean smartExplore2(RobotController rc) throws GameActionException {
 
         if (!Pathfinding.BugNav.canMoveOrFill(exploreDirection) || rc.isLocationOccupied(rc.getLocation().add(exploreDirection))) {
             // find new direction

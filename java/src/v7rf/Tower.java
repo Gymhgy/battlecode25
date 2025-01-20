@@ -36,18 +36,28 @@ public class Tower {
 
         rc.attack(null);
         RobotInfo[] allies = rc.senseNearbyRobots(-1, rc.getTeam());
-
+        MapInfo[] nearby = rc.senseNearbyMapInfos();
         if (rc.getChips() > 2000 && rc.getRoundNum() > 50 && Util.isPaintTower(rc.getType())) {
             if(rc.canUpgradeTower(rc.getLocation())) {
                 rc.upgradeTower(rc.getLocation());
             }
         }
 
+        int enemyPaints = 0;
+        for (MapInfo mi : nearby) {
+            if (mi.getPaint().isEnemy()) enemyPaints++;
+        }
+
+
+
         if (rc.getChips() > 1300) {
 
 
             UnitType type = UnitType.SOLDIER;
-            if (og && rc.getRoundNum() < 20) {
+            if (rc.getRoundNum() == 1 && enemyPaints > 12) {
+                type = UnitType.MOPPER;
+            }
+            else if (og && rc.getRoundNum() < 20) {
                 type = UnitType.SOLDIER;
             }
             else if (rc.getRoundNum() < 150 && FastMath.rand256() % 4 < 1) {

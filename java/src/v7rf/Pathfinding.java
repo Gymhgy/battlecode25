@@ -345,11 +345,14 @@ public class Pathfinding {
                 return false;
             if (rc.canSenseLocation(newLoc)) {
                 if (loc.equals(rc.getLocation())) return true;
-                if (!rc.canSenseLocation(loc)) return true;
-                MapInfo mi = rc.senseMapInfo(loc);
+                MapInfo mi = rc.senseMapInfo(newLoc);
 
                 if (mi.isWall()) return false;
                 if (mi.hasRuin()) return false;
+                if (rc.getType() == UnitType.SOLDIER && rc.getPaint() < 35) return mi.getPaint() == PaintType.ALLY_PRIMARY;
+                if (rc.getType() == UnitType.SPLASHER && rc.getPaint() < 35) return mi.getPaint() == PaintType.ALLY_PRIMARY;
+
+
                 if (rc.getType() == UnitType.MOPPER && mi.getPaint().isEnemy()) return false;
                 if (rc.getType() == UnitType.MOPPER || rc.getType() == UnitType.SOLDIER) {
                     for (RobotInfo r : rc.senseNearbyRobots(loc, 9, rc.getTeam().opponent())) {

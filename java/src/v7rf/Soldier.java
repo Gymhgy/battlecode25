@@ -251,11 +251,21 @@ public class Soldier {
     }
 
     private static void tryBuildSRP(RobotController rc) throws GameActionException {
-        if (rc.canCompleteResourcePattern(curSRP)) {
-            rc.completeResourcePattern(curSRP);
-            //badSRPs.add(curSRP);
-            curSRP = null;
-            return;
+        RobotInfo[] enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
+        boolean safe = true;
+        for (int i = 0; i < enemies.length; i++) {
+            if (enemies[i].getType() == UnitType.SPLASHER || enemies[i].getType() == UnitType.MOPPER) {
+                safe = false;
+                break;
+            }
+        }
+        if (safe) {
+            if (rc.canCompleteResourcePattern(curSRP)) {
+                rc.completeResourcePattern(curSRP);
+                //badSRPs.add(curSRP);
+                curSRP = null;
+                return;
+            }
         }
 
         if(!rc.getLocation().equals(curSRP))
@@ -501,6 +511,7 @@ public class Soldier {
             }
         }
 
+        //if (rc.getPaint() <= 120) return;
         /*for(MapLocation loc : nearby) {
             boolean canOverwrite = true;
             if (!canPaintReal(rc, loc)) continue;

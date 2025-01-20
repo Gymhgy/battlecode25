@@ -45,7 +45,8 @@ public class Refill {
         if (rc.canSenseRobotAtLocation(loc)) { // So many checks:
             RobotInfo ri = rc.senseRobotAtLocation(loc);
             UnitType a = ri.getType();
-            if (v5.Util.isPaintTower(a)) {
+            if (Util.isPaintTower(a)) {
+
                 if (rc.getChips() > 1300 && ri.getPaintAmount() + amount < 100) {
                     return true;
                 }
@@ -53,13 +54,22 @@ public class Refill {
                     rc.transferPaint(loc, amount);
                     return false;
                 } else {
-                    // wait?
+                    int amt = -Math.min(10, ri.getPaintAmount());
+                    if (rc.getPaint() == 0 && rc.canTransferPaint(loc, amt)) {
+                        rc.transferPaint(loc, amt);
+                    }
                 }
             }
-            else if (v5.Util.isMoneyTower(a)){
+            else if (Util.isMoneyTower(a)){
                 if (rc.canTransferPaint(loc, amount)) {
                     rc.transferPaint(loc, amount);
                     return false;
+                }
+                else {
+                    int amt = -Math.min(10, ri.getPaintAmount());
+                    if (rc.getPaint() == 0 && rc.canTransferPaint(loc, amt)) {
+                        rc.transferPaint(loc, amt);
+                    }
                 }
                 if (ri.getPaintAmount() < -amount - 30) {
                     return false;
