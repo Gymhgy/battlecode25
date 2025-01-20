@@ -83,7 +83,7 @@ public class Splasher {
     private static void attackTower(RobotController rc) throws GameActionException {
         // System.out.println(target.toString());
         if (FastMath.manhattan(rc.getLocation(), target) <= 4 && rc.isActionReady()) {
-            /*MapLocation bestAttackTile = null;
+            MapLocation bestAttackTile = null;
             int bestValue = Integer.MIN_VALUE;
 
             for (MapLocation loc : rc.getAllLocationsWithinRadiusSquared(rc.getLocation(), 4)) {
@@ -91,8 +91,8 @@ public class Splasher {
                     rc.attack(loc);
                     break;
                 }
-            }*/
-            performAttack(rc);
+            }
+            //performAttack(rc);
         }
     }
 
