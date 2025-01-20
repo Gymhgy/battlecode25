@@ -10,7 +10,6 @@ public class Splasher {
     private static FastLocSet allyMoneyTowers = new FastLocSet();
     static MapLocation myClump;
 
-
     static MapLocation target = null;
 
     private static int worthThreshold = 8; // leaving this here: easier to see and tweak

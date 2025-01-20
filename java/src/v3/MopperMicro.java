@@ -57,8 +57,8 @@ public class MopperMicro {
             canAttack = rc.isActionReady();
 
 
-            MicroInfo[] microInfo = new MicroInfo[9];
-            for (int i = 0; i < 9; ++i) microInfo[i] = new MicroInfo(dirs[i]);
+            TargetInfo[] microInfo = new TargetInfo[9];
+            for (int i = 0; i < 9; ++i) microInfo[i] = new TargetInfo(dirs[i]);
 
             for (RobotInfo unit : units) {
                 if (Clock.getBytecodesLeft() < MAX_MICRO_BYTECODE_REMAINING) break;
@@ -90,7 +90,7 @@ public class MopperMicro {
                 microInfo[8].updateAlly(unit);
             }
 
-            MicroInfo bestMicro = microInfo[8];
+            TargetInfo bestMicro = microInfo[8];
             for (int i = 0; i < 8; ++i) {
                 if (microInfo[i].isBetter(bestMicro)) bestMicro = microInfo[i];
             }
@@ -109,7 +109,7 @@ public class MopperMicro {
     }
 
 
-    class MicroInfo {
+    class TargetInfo {
         Direction dir;
         MapLocation location;
         int minDistanceToEnemy = INF;
@@ -118,7 +118,7 @@ public class MopperMicro {
         PaintType pt;
         boolean inTowerRange = false;
 
-        public MicroInfo(Direction dir) throws GameActionException {
+        public TargetInfo(Direction dir) throws GameActionException {
             this.dir = dir;
             this.location = rc.getLocation().add(dir);
 
@@ -149,7 +149,7 @@ public class MopperMicro {
         }
 
         //equal => true
-        boolean isBetter(MicroInfo M){
+        boolean isBetter(TargetInfo M){
             if(canMove && !M.canMove) return true;
             if(!canMove && M.canMove) return false;
 

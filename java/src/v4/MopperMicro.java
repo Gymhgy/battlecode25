@@ -57,7 +57,7 @@ public class MopperMicro {
             canAttack = rc.isActionReady();
 
 
-            MicroInfo[] microInfo = new MicroInfo[9];
+            TargetInfo[] microInfo = new MicroInfo[9];
             for (int i = 0; i < 9; ++i) microInfo[i] = new MicroInfo(dirs[i]);
 
             for (RobotInfo unit : units) {
