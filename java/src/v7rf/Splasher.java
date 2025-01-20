@@ -141,7 +141,7 @@ public class Splasher {
                     int val = getWorth(mi);
                     RobotInfo r = rc.senseRobotAtLocation(loc);
                     if (r != null) {
-                        if (r.getType().isTowerType() && r.getTeam() != rc.getTeam()) worth += 8;
+                        if (r.getType().isTowerType() && r.getTeam() != rc.getTeam()) worth += 12;
                     }
                     cache.add(loc, val);
                     worth += val;
