@@ -7,7 +7,7 @@ public class SplasherMicro {
     final int INF = 1000000;
     boolean shouldPlaySafe = false;
     static int myVisionRange = GameConstants.VISION_RADIUS_SQUARED;
-    static final int RANGE = UnitType.SOLDIER.actionRadiusSquared;
+    static final int RANGE = UnitType.LEVEL_ONE_PAINT_TOWER.actionRadiusSquared;
 
     static final Direction[] dirs = {
             Direction.NORTH,

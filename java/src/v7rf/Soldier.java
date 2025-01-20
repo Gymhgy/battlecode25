@@ -47,7 +47,12 @@ public class Soldier {
         Refill.init(80);
         soldierMicro = new SoldierMicro(rc);
     }
-
+    static void updateTarget(RobotController rc) {
+        MapLocation closest = Communicator.enemyTowers.closest(rc.getLocation());
+        if (closest != null && closest.isWithinDistanceSquared(rc.getLocation(), 16)) {
+            closestEnemyTower = closest;
+        }
+    }
     static void run(RobotController rc) throws GameActionException {
         nearbyTiles = rc.senseNearbyMapInfos();
         nearbyAllies = rc.senseNearbyRobots(-1, rc.getTeam());
@@ -57,6 +62,7 @@ public class Soldier {
 
         if (closestEnemyTower != null && !Communicator.enemyTowers.contains(closestEnemyTower)) closestEnemyTower = null;
         if (closestEnemyTower == null) closestEnemyTower = Communicator.enemyTowers.closest(rc.getLocation());
+        updateTarget(rc);
         attackTower(rc);
         if (closestEnemyTower!=null && closestEnemyTower.isWithinDistanceSquared(rc.getLocation(), 16)) {
             if (canBeat(rc))

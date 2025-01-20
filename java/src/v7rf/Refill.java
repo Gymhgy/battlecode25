@@ -2,6 +2,7 @@ package v7rf;
 
 import battlecode.common.*;
 import v7rf.fast.FastLocSet;
+import v7rf.fast.*;
 
 public class Refill {
 
@@ -36,6 +37,8 @@ public class Refill {
             }
         }
         // TODO: if you see it and its super crowded, try something else.
+        if (FastMath.rand256() % 3 == 0)
+            return towers.secondClosest(rc.getLocation());
         return towers.closest(rc.getLocation());
     }
 

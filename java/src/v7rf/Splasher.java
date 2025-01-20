@@ -20,6 +20,13 @@ public class Splasher {
         splasherMicro = new SplasherMicro(rc);
     }
 
+    static void updateTarget(RobotController rc) {
+        MapLocation closest = Communicator.enemyTowers.closest(rc.getLocation());
+        if (closest != null && closest.isWithinDistanceSquared(rc.getLocation(), 12)) {
+            target = closest;
+        }
+    }
+
     static void run(RobotController rc) throws GameActionException {
         Communicator.update(rc);
         Communicator.relayEnemyTower(rc);
@@ -31,6 +38,7 @@ public class Splasher {
         }
         if (target != null && !Communicator.enemyTowers.contains(target)) target = null;
         if (target == null) target = Communicator.enemyTowers.closest(rc.getLocation());
+        updateTarget(rc);
         if (target!=null) {
             if (rc.canSenseLocation(target)) {
                 attackTower(rc);
@@ -75,7 +83,7 @@ public class Splasher {
     private static void attackTower(RobotController rc) throws GameActionException {
         // System.out.println(target.toString());
         if (FastMath.manhattan(rc.getLocation(), target) <= 4 && rc.isActionReady()) {
-            MapLocation bestAttackTile = null;
+            /*MapLocation bestAttackTile = null;
             int bestValue = Integer.MIN_VALUE;
 
             for (MapLocation loc : rc.getAllLocationsWithinRadiusSquared(rc.getLocation(), 4)) {
@@ -83,7 +91,8 @@ public class Splasher {
                     rc.attack(loc);
                     break;
                 }
-            }
+            }*/
+            performAttack(rc);
         }
     }
 
@@ -130,6 +139,10 @@ public class Splasher {
                 }
                 else {
                     int val = getWorth(mi);
+                    RobotInfo r = rc.senseRobotAtLocation(loc);
+                    if (r != null) {
+                        if (r.getType().isTowerType() && r.getTeam() != rc.getTeam()) worth += 8;
+                    }
                     cache.add(loc, val);
                     worth += val;
                 }
