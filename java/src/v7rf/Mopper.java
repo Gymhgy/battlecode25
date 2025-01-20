@@ -127,6 +127,7 @@ public class Mopper {
         RobotInfo[] enemies = rc.senseNearbyRobots(2, rc.getTeam().opponent());
 
         MapLocation hitLoc = null;
+
         for (RobotInfo enemy : enemies) {
             if (rc.senseMapInfo(enemy.getLocation()).getPaint().isEnemy()) {
                 hitLoc = enemy.getLocation();
@@ -149,20 +150,20 @@ public class Mopper {
                 MapLocation adj2 = orig.add(dir.rotateLeft());
                 if (rc.canSenseLocation(adj1)) {
                     RobotInfo robot = rc.senseRobotAtLocation(adj1);
-                    if (robot != null && robot.getTeam() == rc.getTeam().opponent()) {
+                    if (robot != null && robot.getTeam() == rc.getTeam().opponent() && robot.getPaintAmount() > 0) {
                         hits++;
                     }
                 }
                 if (rc.canSenseLocation(adj2)) {
                     RobotInfo robot = rc.senseRobotAtLocation(adj2);
-                    if (robot != null && robot.getTeam() == rc.getTeam().opponent()) {
+                    if (robot != null && robot.getTeam() == rc.getTeam().opponent() && robot.getPaintAmount() > 0) {
                         hits++;
                     }
                 }
 
                 if (rc.canSenseLocation(target)) {
                     RobotInfo robot = rc.senseRobotAtLocation(target);
-                    if (robot != null && robot.getTeam() == rc.getTeam().opponent()) {
+                    if (robot != null && robot.getTeam() == rc.getTeam().opponent() && robot.getPaintAmount() > 0) {
                         hits++;
                     }
                 }
@@ -175,14 +176,23 @@ public class Mopper {
             }
         }
 
-        if ((hitLoc == null || maxHits >= 2) && maxHits > 0) {
-            rc.mopSwing(bestDirection);
-            return;
+        if (hitLoc == null) {
+            if (maxHits >= 2) {
+                rc.mopSwing(bestDirection);
+                return;
+            }
+            else {
+                for (RobotInfo enemy : enemies) {
+                    rc.attack(enemy.getLocation());
+                    return;
+                }
+            }
         }
-        else if (hitLoc != null) {
+        else {
             rc.attack(hitLoc);
             return;
         }
+
 
         // Attack any tile with enemy paint on it
         for (MapInfo loc : rc.senseNearbyMapInfos(2)) {

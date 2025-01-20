@@ -88,19 +88,19 @@ public class Splasher {
         PaintType pt = mi.getPaint();
         //TODO: tweak this...
         if (mi.hasRuin()) return 0;
-        if (pt.isAlly()) return -1;
+        if (pt.isAlly()) return 0;
         if (pt.isEnemy()) return 4;
         return 1;
     }
-    private static int worthThreshold = 13; // leaving this here: easier to see and tweak
+    private static int worthThreshold = 12; // leaving this here: easier to see and tweak
 
     static int[][] attackTiles2 = {
             {-2, 0}, {2, 0}, {0, -2}, {0, 2}
     };
     static int[][] coordinates = {
             {0, 0}, {-1, 0}, {1, 0}, {0, -1}, {0, 1},
-            {-1, -1}, {-1, 1}, {1, -1}, {1, 1}, {-2, 0},
-            {2, 0}, {0, -2}, {0, 2}
+            {-1, -1}, {-1, 1}, {1, -1}, {1, 1}, /*{-2, 0},
+            {2, 0}, {0, -2}, {0, 2}*/
     };
     static void performAttack(RobotController rc) throws GameActionException {
             /*  RobotInfo[] enemies = rc.senseNearbyRobots(range, rc.getTeam().opponent());

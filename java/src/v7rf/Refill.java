@@ -50,6 +50,16 @@ public class Refill {
                 if (rc.getChips() > 1300 && ri.getPaintAmount() + amount < 100) {
                     return true;
                 }
+                if (!rc.getLocation().isAdjacentTo(loc)) {
+                    int amt = 0;
+                    for (Direction d : RobotPlayer.directions) {
+                        MapLocation wait = loc.add(d);
+                        if (rc.canSenseLocation(wait) && rc.isLocationOccupied(wait)) {
+                            amt++;
+                        }
+                    }
+                    if (amt >= 4) return true;
+                }
                 if (rc.canTransferPaint(loc, amount)) {
                     rc.transferPaint(loc, amount);
                     return false;
@@ -58,6 +68,17 @@ public class Refill {
                     if (rc.getPaint() == 0 && rc.canTransferPaint(loc, amt)) {
                         rc.transferPaint(loc, amt);
                     }
+                    /*if (rc.getLocation().isAdjacentTo(loc)) {
+                        for (Direction d : RobotPlayer.directions) {
+                            MapLocation wait = rc.getLocation().add(d);
+                            if (rc.canSenseLocation(wait) && rc.senseMapInfo(wait).getPaint().isAlly() && rc.canMove(d)) {
+                                rc.move(d);
+                                return true;
+                            }
+                        }
+                    }*/
+                    //if (rc.getPaint() >= 5 && rc.getLocation().)
+
                 }
             }
             else if (Util.isMoneyTower(a)){

@@ -305,7 +305,7 @@ public class Pathfinding {
             MapLocation loc = rc.getLocation().add(dir);
             if (stayawayFrom != null && loc.isAdjacentTo(stayawayFrom))
                 return false;
-            if (rc.canMove(dir)) {
+            if (/*canPass(rc.getLocation(), dir)*/ rc.canMove(dir)) {
                 // it is not ok to move onto a tile to block a teammate's movement
                 RobotInfo[] nearbyFriends = rc.senseNearbyRobots(2, rc.getTeam());
                 for (int i = nearbyFriends.length; --i >= 0;) {
@@ -344,23 +344,30 @@ public class Pathfinding {
             if (!rc.onTheMap(newLoc))
                 return false;
             if (rc.canSenseLocation(newLoc)) {
-                if (loc.equals(rc.getLocation())) return true;
+                if (newLoc.equals(rc.getLocation())) return true;
+                if (rc.isLocationOccupied(newLoc)) return false;
                 MapInfo mi = rc.senseMapInfo(newLoc);
 
                 if (mi.isWall()) return false;
                 if (mi.hasRuin()) return false;
-                if (rc.getType() == UnitType.SOLDIER && rc.getPaint() < 35) return mi.getPaint() == PaintType.ALLY_PRIMARY;
-                if (rc.getType() == UnitType.SPLASHER && rc.getPaint() < 35) return mi.getPaint() == PaintType.ALLY_PRIMARY;
-
+                if (rc.getType() == UnitType.SOLDIER && rc.getPaint() < 35) return mi.getPaint().isAlly();
+                if (rc.getType() == UnitType.SPLASHER && rc.getPaint() < 35) return mi.getPaint().isAlly();
 
                 if (rc.getType() == UnitType.MOPPER && mi.getPaint().isEnemy()) return false;
                 if (rc.getType() == UnitType.MOPPER || rc.getType() == UnitType.SOLDIER) {
-                    for (RobotInfo r : rc.senseNearbyRobots(loc, 9, rc.getTeam().opponent())) {
+                    for (RobotInfo r : rc.senseNearbyRobots(newLoc, 9, rc.getTeam().opponent())) {
                         if (r.getType().isTowerType()) {
                             return false;
                         }
                     }
                 }
+                /*int adj = 0;
+                for (Direction d : Direction.allDirections()) {
+                    if(!rc.canSenseLocation(loc.add(d))) continue;
+                    RobotInfo r = rc.senseRobotAtLocation(loc.add(d));
+                    if (r != null && r.getTeam() == rc.getTeam() && !r.getType().isTowerType()) adj++;
+                }
+                if (adj >= 4) return FastMath.rand256() % adj < 2;*/
                 return rc.sensePassability(newLoc);
             }
             return true;
