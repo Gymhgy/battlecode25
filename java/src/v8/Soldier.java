@@ -22,15 +22,11 @@ public class Soldier {
     };
 
     static PaintType numToPaint(int num) {
-        switch (num) {
-            case 0:
-                return PaintType.EMPTY;
-            case 1:
-                return PaintType.ALLY_PRIMARY;
-            case 2:
-                return PaintType.ALLY_SECONDARY;
-        }
-        return PaintType.EMPTY;
+        return switch (num) {
+            case 1 -> PaintType.ALLY_PRIMARY;
+            case 2 -> PaintType.ALLY_SECONDARY;
+            default -> PaintType.EMPTY;
+        };
     }
     static UnitType curRuinType = null;
     static MapInfo curRuin = null;
@@ -45,22 +41,24 @@ public class Soldier {
         Refill.init(80);
         soldierMicro = new SoldierMicro(rc);
     }
-
+    // why the fuck is run broke? Ahhh ima die.
     static void run(RobotController rc) throws GameActionException {
         nearbyTiles = rc.senseNearbyMapInfos();
         nearbyAllies = rc.senseNearbyRobots(-1, rc.getTeam());
         Communicator.update(rc);
         Communicator.relayEnemyTower(rc);
         blacklistCleanup(rc);
-
-        if (closestEnemyTower != null && !Communicator.enemyTowers.contains(closestEnemyTower)) closestEnemyTower = null;
+        if (closestEnemyTower != null && !Communicator.enemyTowers.contains(closestEnemyTower)) closestEnemyTower = null; // i.e tower is dead
         if (closestEnemyTower == null) closestEnemyTower = Communicator.enemyTowers.closest(rc.getLocation());
         attackTower(rc);
-        if (closestEnemyTower!=null && closestEnemyTower.isWithinDistanceSquared(rc.getLocation(), 16)) {
+        if (!retreating && closestEnemyTower!=null && closestEnemyTower.isWithinDistanceSquared(rc.getLocation(), 16)) {
             if (canBeat(rc))
                 soldierMicro.doMicro(closestEnemyTower, false);
             else {
-                if (closestEnemyTower.isWithinDistanceSquared(rc.getLocation(), UnitType.LEVEL_ONE_PAINT_TOWER.actionRadiusSquared + 20)) retreating = true;
+                if (rc.getRoundNum() < 70 && curRuin == null && closestEnemyTower.isWithinDistanceSquared(rc.getLocation(), UnitType.LEVEL_ONE_PAINT_TOWER.actionRadiusSquared + 20)) retreating = true;
+                else {
+                    closestEnemyTower = null; // Just old process
+                }
             }
         }
         attackTower(rc);
@@ -167,25 +165,31 @@ public class Soldier {
                     if(rc.isActionReady())
                         paintRandomly(rc);
                 }*/
-                if (retreating && closestEnemyTower != null) {
-                    retreat(rc);
-                }
-                else if (rc.getRoundNum() > (rc.getMapHeight() * rc.getMapWidth()) * 7 / 64 + 6 && rc.getID() % 2 == 0) {
+
+                if (rc.getRoundNum() > (rc.getMapHeight() * rc.getMapWidth()) * 7 / 64 + 6 && rc.getID() % 2 == 0) {
                     if (fill(rc)) {
-                        if (closestEnemyTower != null) {
+                        if (!retreating && closestEnemyTower != null) {
                             Pathfinding.moveToward(rc, closestEnemyTower);
                         } else {
-                            Explorer.smartExplore(rc);
+                            if (retreating) {
+                                retreat(rc);
+                            } else {
+                                Explorer.smartExplore(rc);
+                            }
                         }
                         if(rc.isActionReady())
                             paintRandomly(rc);
                     }
                 }
                 else {
-                    if (closestEnemyTower != null) {
+                    if (!retreating && closestEnemyTower != null) {
                         Pathfinding.moveToward(rc, closestEnemyTower);
                     } else {
-                        Explorer.smartExplore(rc);
+                        if (retreating) {
+                            retreat(rc);
+                        } else {
+                            Explorer.smartExplore(rc);
+                        }
                     }
                     if(rc.isActionReady())
                         paintRandomly(rc);
@@ -198,15 +202,17 @@ public class Soldier {
         endTurn(rc);
     }
     // Robots that are stuck on the other side of the map are still
+    // Problem: Is bobble bad?
     private static void retreat(RobotController rc) throws GameActionException {
         MapLocation loc = rc.getLocation();
         if (paintTowers.size() > 0 && (paintTowers.closest(loc).isWithinDistanceSquared(loc, 35))) {
-            System.out.println("Retreating due to distan e from paintTower");
+            System.out.println("Retreating due to distance from paintTower");
             soldierMicro.doMicro(paintTowers.closest(loc), false);
-        } else if (!rc.getLocation().isWithinDistanceSquared(closestEnemyTower, UnitType.LEVEL_ONE_MONEY_TOWER.actionRadiusSquared + 20))  {
+        } else if (!loc.isWithinDistanceSquared(closestEnemyTower, UnitType.LEVEL_ONE_MONEY_TOWER.actionRadiusSquared + 20))  { //
             System.out.println("Stop retreating");
             retreating = false;
             closestEnemyTower = null;
+            // is something broke here
         } else {
             // Where do we want to retreat to? If we're really far away from closest paint tower... then to closest paint towe=r
             // else, just back away from closest Enemy Tower
@@ -363,6 +369,7 @@ public class Soldier {
                 if (robot.getType() == UnitType.SOLDIER && robot.getTeam() == rc.getTeam()) {
                     soldierCount++;
                 } else if (robot.getType().isTowerType() && robot.getTeam().isPlayer()) {
+                    System.out.println("Please run");
                     paintTowers.add(robot.getLocation());
                 }
             }
@@ -384,9 +391,7 @@ public class Soldier {
                     PaintType pt = rc.senseMapInfo(loc).getPaint();
                     if (pt.isEnemy()) {
                         en++;
-
                         boolean mopperNearby = false;
-
                         for (RobotInfo nearbyRobot : nearbyAllies) {
                             if (nearbyRobot.getLocation().isWithinDistanceSquared(loc, 9) &&
                                     nearbyRobot.getType() == UnitType.MOPPER &&
