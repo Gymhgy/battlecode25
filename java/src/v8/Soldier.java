@@ -55,10 +55,11 @@ public class Soldier {
             if (canBeat(rc))
                 soldierMicro.doMicro(closestEnemyTower, false);
             else {
-                if (rc.getRoundNum() < 70 && curRuin == null && closestEnemyTower.isWithinDistanceSquared(rc.getLocation(), UnitType.LEVEL_ONE_PAINT_TOWER.actionRadiusSquared + 20)) retreating = true;
+                /*if (rc.getRoundNum() < 70 && curRuin == null && closestEnemyTower.isWithinDistanceSquared(rc.getLocation(), UnitType.LEVEL_ONE_PAINT_TOWER.actionRadiusSquared + 20)) retreating = true;
                 else {
+                 */
                     closestEnemyTower = null; // Just old process
-                }
+                //}
             }
         }
         attackTower(rc);
@@ -88,21 +89,25 @@ public class Soldier {
         if (rc.getNumberTowers() == 25) curRuin = null;
 
         if (curRuin == null) {
-            boolean refilling = Refill.refill(rc);
-            if (refilling){
-                endTurn(rc);
-                return;
+            if (rc.getChips() > 1500) {
+                boolean refilling = Refill.refill(rc);
+                if (refilling) {
+                    endTurn(rc);
+                    return;
+                }
             }
         }
         else {
-            int initial = Refill.minPaint;
-            Refill.minPaint = 10;
-            boolean refilling = Refill.refill(rc);
-            if (refilling) {
-                endTurn(rc);
-                return;
+            if (rc.getChips() > 3000) {
+                int initial = Refill.minPaint;
+                Refill.minPaint = 10;
+                boolean refilling = Refill.refill(rc);
+                if (refilling) {
+                    endTurn(rc);
+                    return;
+                }
+                Refill.minPaint = initial;
             }
-            Refill.minPaint = initial;
         }
         if (curRuin != null) {
             if (curRuinType == UnitType.LEVEL_ONE_PAINT_TOWER && !curRuin.getMark().isSecondary()) {
@@ -236,7 +241,7 @@ public class Soldier {
         int hp = rc.getHealth();
         int paint = rc.getPaint();
         int enemyHp = rc.senseRobotAtLocation(closestEnemyTower).health;
-        if (enemyHp / 50 <= (paint / 6) * mult && (double) (hp * mult + 40) / 40 > (double) enemyHp / 50  ) return true;
+        if (enemyHp / 50 <= (paint / 6) * mult && (double) (hp * mult) / 40 > (double) enemyHp / 50  ) return true;
         return false;
     }
     // Towers deal 20 damage to single block With Action cooldown of once/trun
