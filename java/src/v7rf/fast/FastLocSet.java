@@ -110,4 +110,25 @@ public class FastLocSet {
         }
         return ret;
     }
+
+    public MapLocation secondClosest(MapLocation me) {
+        int dist1 = 100000000;
+        int dist2 = 1000000000;
+        MapLocation ret1 = null;
+        MapLocation ret2 = null;
+        for (int i = 1; i < keys.length(); i += 3) {
+            MapLocation d = new MapLocation((int) keys.charAt(i), (int) keys.charAt(i + 1));
+            if (d.distanceSquaredTo(me) < dist1) {
+                ret2 = ret1;
+                ret1 = d;
+                dist2 = dist1;
+                dist1 = d.distanceSquaredTo(me);
+            }
+            else if (d.distanceSquaredTo(me) < dist2 & d.distanceSquaredTo(me) != dist1) {
+                ret2 = d;
+                dist2 = d.distanceSquaredTo(me);
+            }
+        }
+        return ret2;
+    }
 }
