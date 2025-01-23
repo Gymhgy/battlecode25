@@ -1,9 +1,9 @@
-package v7rf;
+package v7mopper;
 
 import battlecode.common.*;
-import v7rf.fast.FastIntSet;
-import v7rf.fast.FastLocSet;
-import v7rf.fast.FastMath;
+import v7mopper.fast.FastIntSet;
+import v7mopper.fast.FastLocSet;
+import v7mopper.fast.FastMath;
 
 public class Soldier {
 

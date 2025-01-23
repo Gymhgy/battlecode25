@@ -1,9 +1,9 @@
-package v7rf;
+package v8o2;
 
 import battlecode.common.*;
-import v7rf.fast.FastIntSet;
-import v7rf.fast.FastLocSet;
-import v7rf.fast.FastMath;
+import v8o2.fast.FastIntSet;
+import v8o2.fast.FastLocSet;
+import v8o2.fast.FastMath;
 
 public class Soldier {
 
@@ -82,15 +82,14 @@ public class Soldier {
                 }
                 if (ruinCheck(rc, tile)) {
                     curRuin = tile;
-                    if (rc.getRoundNum() < 20) {
-                        curRuinType = UnitType.LEVEL_ONE_MONEY_TOWER;
-                    }
-                    else if (tile.getMark().isSecondary()) {
-                        curRuinType = UnitType.LEVEL_ONE_PAINT_TOWER;
-                    } else {
-                        curRuinType = (FastMath.rand256() % 7 < 2) ?
-                                UnitType.LEVEL_ONE_PAINT_TOWER :
-                                UnitType.LEVEL_ONE_MONEY_TOWER;
+                    if (curRuinType == null) {
+                        if (rc.getRoundNum() < 20) {
+                            curRuinType = UnitType.LEVEL_ONE_MONEY_TOWER;
+                        } else {
+                            curRuinType = (FastMath.rand256() % 7 < 2) ?
+                                    UnitType.LEVEL_ONE_PAINT_TOWER :
+                                    UnitType.LEVEL_ONE_MONEY_TOWER;
+                        }
                     }
                 }
             }
@@ -115,22 +114,21 @@ public class Soldier {
             Refill.minPaint = initial;
         }
         if (curRuin != null) {
-            if (curRuinType == UnitType.LEVEL_ONE_PAINT_TOWER && !curRuin.getMark().isSecondary()) {
-                MapLocation toMark = null;
-                boolean alrMarked = false;
-                for (MapLocation loc : rc.getAllLocationsWithinRadiusSquared(curRuin.getMapLocation(), 2)) {
-                    if (rc.canSenseLocation(loc) && rc.senseMapInfo(loc).getMark().isSecondary()) {
-                        alrMarked = true;
-                        break;
-                    }
-                    if (rc.canMark(loc)) {
-                        toMark = loc;
-                    }
+            MapLocation toMark = null;
+            boolean alrMarked = false;
+            for (MapLocation loc : rc.getAllLocationsWithinRadiusSquared(curRuin.getMapLocation(), 2)) {
+                if (rc.canSenseLocation(loc) && rc.senseMapInfo(loc).getMark().isAlly()) {
+                    alrMarked = true;
+                    break;
                 }
-                if (!alrMarked && toMark != null) {
-                    rc.mark(toMark, true);
+                if (rc.canMark(loc)) {
+                    toMark = loc;
                 }
             }
+            if (!alrMarked && toMark != null) {
+                rc.mark(toMark, curRuinType == UnitType.LEVEL_ONE_PAINT_TOWER);
+            }
+
             if (ruinCheck(rc, curRuin)) {
                 tryBuild(rc);
             } else {
@@ -356,8 +354,11 @@ public class Soldier {
             if (rc.senseMapInfo(loc).getMark() == PaintType.ALLY_SECONDARY) {
                 curRuinType = UnitType.LEVEL_ONE_PAINT_TOWER;
             }
+            else if (rc.senseMapInfo(loc).getMark() == PaintType.ALLY_SECONDARY) {
+                curRuinType = UnitType.LEVEL_ONE_MONEY_TOWER;
+            }
 
-            if (soldierCount >= 2 && !rc.getLocation().isWithinDistanceSquared(ruinLoc, 2)) {
+                if (soldierCount >= 2 && !rc.getLocation().isWithinDistanceSquared(ruinLoc, 2)) {
                 return false;
             }
         }
@@ -404,6 +405,7 @@ public class Soldier {
             if(rc.canTransferPaint(curRuin.getMapLocation(), -Refill.getEmptyPaintAmount(rc))) {
                 rc.transferPaint(curRuin.getMapLocation(), -Refill.getEmptyPaintAmount(rc));
             }
+            curRuinType = curRuinType == UnitType.LEVEL_ONE_PAINT_TOWER ? UnitType.LEVEL_ONE_MONEY_TOWER : UnitType.LEVEL_ONE_PAINT_TOWER;
             curRuin = null;
             return;
         }

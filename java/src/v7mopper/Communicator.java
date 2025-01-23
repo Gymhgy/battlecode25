@@ -1,8 +1,8 @@
-package v8o1;
+package v7mopper;
 
 import battlecode.common.*;
-import v8o1.fast.FastIntSet;
-import v8o1.fast.FastLocSet;
+import v7mopper.fast.FastIntSet;
+import v7mopper.fast.FastLocSet;
 
 public class Communicator {
 
@@ -164,10 +164,4 @@ class Info {
     public String toString() {
         return (addition ? "add " : "del ") + loc;
     }
-}
-
-enum InfoType {
-    ADDITION,
-    REMOVAL,
-    PAINT_TOWER
 }

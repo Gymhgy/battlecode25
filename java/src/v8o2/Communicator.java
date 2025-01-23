@@ -1,8 +1,8 @@
-package v8o1;
+package v8o2;
 
 import battlecode.common.*;
-import v8o1.fast.FastIntSet;
-import v8o1.fast.FastLocSet;
+import v8o2.fast.FastIntSet;
+import v8o2.fast.FastLocSet;
 
 public class Communicator {
 
