@@ -1,6 +1,7 @@
 package v8o2;
 
 import battlecode.common.*;
+import v8o2.fast.FastMath;
 
 public class SplasherMicro {
 
@@ -115,7 +116,7 @@ public class SplasherMicro {
                 return;
             }
             MapInfo mi = rc.senseMapInfo(this.location);
-            if (isTower && enemyTower.isWithinDistanceSquared(location, RANGE)) inTowerRange = true;
+            if (FastMath.manhattan(location, enemyTower) <= 4) canHitTower = true;
             distToTower = enemyTower.distanceSquaredTo(location);
             pt = mi.getPaint();
             if (pt.isEnemy()) {
@@ -133,6 +134,9 @@ public class SplasherMicro {
             if (!canMove) return;
             if (unit.getType() == UnitType.MOPPER) {
                 if (unit.getLocation().isWithinDistanceSquared(location, 2)) numMoppers++;
+            }
+            if (unit.getType().isTowerType() && Util.inTowerRange(location, unit)) {
+                inTowerRange = true;
             }
         }
 
@@ -158,6 +162,11 @@ public class SplasherMicro {
 
             if (inTowerRange && !M.inTowerRange) return false;
             if (!inTowerRange && M.inTowerRange) return true;
+
+            if (canAttack) {
+                if (canHitTower && !M.canHitTower) return true;
+                if (!canHitTower && M.canHitTower) return false;
+            }
 
             //Aggressive...
             if (distToTower < M.distToTower) return true;

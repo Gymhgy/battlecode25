@@ -46,7 +46,7 @@ public class Splasher {
                 attackTower(rc);
                 if (rc.isActionReady()) performAttack(rc);
             } else {
-                if (rc.isActionReady()) performAttack(rc);
+                //if (rc.isActionReady()) performAttack(rc);
                 MapLocation next = survey(rc);
                 if (next != null) {
                     splasherMicro.doMicro(next, false);
@@ -107,7 +107,7 @@ public class Splasher {
     private static int worthThreshold = 12; // leaving this here: easier to see and tweak
 
     static int[][] attackTiles2 = {
-            {-2, 0}, {2, 0}, {0, -2}, {0, 2}
+            {-2, 0}, {2, 0}, {0, -2}, {0, 2}, {0, 0}
     };
     static int[][] coordinates = {
             {0, 0}, {-1, 0}, {1, 0}, {0, -1}, {0, 1},

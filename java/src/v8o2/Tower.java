@@ -18,6 +18,7 @@ public class Tower {
     };
     static boolean og = false;
     static MapLocation[] spawners;
+    static RobotInfo[] nearbyAllies;
     static MapLocation center;
     static void init(RobotController rc) throws GameActionException {
         if (rc.getRoundNum() == 1) {
@@ -31,13 +32,18 @@ public class Tower {
     static void run(RobotController rc) throws GameActionException {
         hearThePeopleSpeak(rc);
         cleanup(rc);
-
+        nearbyAllies = rc.senseNearbyRobots(-1, rc.getTeam());
         MapLocation en = enemies.closest(rc.getLocation());
 
         rc.attack(null);
-        RobotInfo[] allies = rc.senseNearbyRobots(-1, rc.getTeam());
         MapInfo[] nearby = rc.senseNearbyMapInfos();
         if (rc.getChips() > 2000 && rc.getRoundNum() > 50 && Util.isPaintTower(rc.getType())) {
+            if(rc.canUpgradeTower(rc.getLocation())) {
+                rc.upgradeTower(rc.getLocation());
+            }
+        }
+
+        if (rc.getChips() > 3000 && rc.getRoundNum() > 50 && Util.isMoneyTower(rc.getType())) {
             if(rc.canUpgradeTower(rc.getLocation())) {
                 rc.upgradeTower(rc.getLocation());
             }
@@ -48,9 +54,27 @@ public class Tower {
             if (mi.getPaint().isEnemy()) enemyPaints++;
         }
 
+        boolean canSpawn = true;
+        if (Util.isPaintTower(rc.getType())) {
+            if (rc.getRoundNum() < 20) canSpawn = true;
+            else {
+                int sum = 0;
+                for (RobotInfo ally : nearbyAllies) {
+                    boolean add = switch (ally.getType()) {
+                        case MOPPER -> ally.getID() % 2 == 0 && ally.getPaintAmount() < 40;
+                        case SOLDIER -> ally.getPaintAmount() < 80;
+                        case SPLASHER -> ally.getPaintAmount() < 80;
+                        default -> false;
+                    };
+                    if (add) {
+                        sum += ally.getType().paintCapacity - ally.getPaintAmount();
+                    }
+                }
+                if (rc.getPaint() < sum * 3.0 / 4) canSpawn = false;
+            }
+        }
 
-
-        if (rc.getChips() > 1300) {
+        if (canSpawn && rc.getChips() > 1300) {
 
 
             UnitType type = UnitType.SOLDIER;
@@ -64,7 +88,7 @@ public class Tower {
                 type = UnitType.MOPPER;
             }
             else {
-                var distr = new UnitType[] {UnitType.SOLDIER, UnitType.SOLDIER, UnitType.MOPPER, UnitType.SPLASHER, UnitType.SPLASHER};
+                var distr = new UnitType[] {UnitType.SOLDIER, UnitType.SOLDIER, UnitType.MOPPER, UnitType.MOPPER, UnitType.SPLASHER, UnitType.SPLASHER};
                 type = distr[FastMath.rand256() % distr.length];
             }
 
@@ -92,7 +116,6 @@ public class Tower {
 
         if (!rc.isActionReady() || spawners.length == 0) return null;
 
-        RobotInfo[] nearbyAllies = rc.senseNearbyRobots(-1, rc.getTeam());
         FastLocSet adjacentLocs = new FastLocSet();
 
         for (RobotInfo ally : nearbyAllies) {
@@ -138,13 +161,35 @@ public class Tower {
     static void attackNearby(RobotController rc) throws GameActionException {
         RobotInfo[] enemies = rc.senseNearbyRobots(rc.getType().actionRadiusSquared, rc.getTeam().opponent());
 
+        RobotInfo target = null;
+
+        // Prioritize by type and health: Soldiers first, then Splashers, then Moppers
         for (RobotInfo enemy : enemies) {
-            if (rc.isActionReady() && rc.canAttack(enemy.getLocation())) {
-                rc.attack(enemy.getLocation());
-                return;
+            if (enemy.getPaintAmount() == 0) continue;
+            if (rc.canAttack(enemy.getLocation())) {
+                if (target == null ||
+                        (enemy.getType() == UnitType.SOLDIER && (target.getType() != UnitType.SOLDIER || enemy.getHealth() < target.getHealth())) ||
+                        (enemy.getType() == UnitType.SPLASHER && target.getType() != UnitType.SOLDIER && (target.getType() != UnitType.SPLASHER || enemy.getHealth() < target.getHealth())) ||
+                        (enemy.getType() == UnitType.MOPPER && target.getType() != UnitType.SOLDIER && target.getType() != UnitType.SPLASHER && enemy.getHealth() < target.getHealth())) {
+                    target = enemy;
+                }
+            }
+        }
+
+        if (target != null) {
+            if (rc.canAttack(target.getLocation()))
+                rc.attack(target.getLocation());
+        }
+        else {
+            for (RobotInfo enemy : enemies) {
+                if (rc.canAttack(enemy.getLocation())) {
+                    rc.attack(enemy.getLocation());
+                    break;
+                }
             }
         }
     }
+
 
 
 

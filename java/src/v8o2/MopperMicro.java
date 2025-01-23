@@ -164,10 +164,8 @@ public class MopperMicro {
             if (unit.getType() == UnitType.MOPPER) {
                 if (unit.getLocation().isAdjacentTo(location)) numMoppers++;
             }
-            if (!inTowerRange && unit.getType().isTowerType()) {
-                if (unit.getLocation().isWithinDistanceSquared(this.location, 9)) {
-                    inTowerRange = true;
-                }
+            if (unit.getType().isTowerType() && Util.inTowerRange(location, unit)) {
+                inTowerRange = true;
             }
         }
 

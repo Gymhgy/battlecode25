@@ -13,6 +13,7 @@ public class Mopper {
     static RobotInfo[] nearbyRobots;
     private static MapLocation enemyTower;
     static FastLocSet enemyTowers = new FastLocSet();
+    static RobotInfo[] enemies;
     static MapLocation closestEnemyTower = null;
     static MopperMicro mopperMicro;
     static void init(RobotController rc) {
@@ -31,13 +32,26 @@ public class Mopper {
         if (closestEnemyTower != null && !Communicator.enemyTowers.contains(closestEnemyTower)) closestEnemyTower = null;
         if (closestEnemyTower == null) closestEnemyTower = Communicator.enemyTowers.closest(rc.getLocation());
 
-        boolean refilling = Refill.refill(rc);
-        if (!refilling) if(rc.isActionReady()) refillSplasher(rc);
-        if (rc.isActionReady()) performAttack(rc);
-        if (refilling) {
-            endTurn(rc);
-            return;
+        if (rc.getID() % 2 == 0) {
+            boolean refilling = Refill.refill(rc);
+            if (!refilling) if (rc.isActionReady()) rescue(rc);
+            if (rc.isActionReady()) performAttack(rc);
+            if (rc.isActionReady()) {
+                for (MapInfo loc : rc.senseNearbyMapInfos(2)) {
+                    if (loc.getPaint().isEnemy()) {
+                        rc.attack(loc.getMapLocation());
+                        break;
+                    }
+                }
+            }
+            if (refilling) {
+                endTurn(rc);
+                return;
+            }
         }
+
+        if(rc.isActionReady()) rescue(rc);
+        harass(rc);
         goTowardsEnemyPaint(rc);
         if (rc.isMovementReady()) {
             if (closestEnemyTower != null) {
@@ -47,11 +61,33 @@ public class Mopper {
                 Explorer.smartExplore(rc);
             }
         }
-        if(rc.isActionReady()) refillSplasher(rc);
+        if(rc.isActionReady()) rescue(rc);
         if (rc.isActionReady()) performAttack(rc);
-        if (Util.shouldKMS(rc)) rc.disintegrate();;
+        //if (Util.shouldKMS(rc)) rc.disintegrate();;
         endTurn(rc);
     }
+
+    static void harass(RobotController rc) throws GameActionException {
+        if (rc.isActionReady()) performAttack(rc);
+        if (!rc.isActionReady() || !rc.isMovementReady()) return;
+        RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(8, rc.getTeam().opponent());
+        for (RobotInfo enemy : nearbyEnemies) {
+            if (enemy.paintAmount == 0) continue;
+            if (enemy.getType() == UnitType.SOLDIER || enemy.getType() == UnitType.SPLASHER) {
+                for (Direction dir : RobotPlayer.directions) {
+                    MapLocation potentialMove = rc.getLocation().add(dir);
+                    if (rc.canSenseLocation(potentialMove) && rc.senseMapInfo(potentialMove).getPaint().isEnemy()) continue;
+                    if (rc.canMove(dir) && potentialMove.isAdjacentTo(enemy.getLocation())) {
+                        rc.move(dir);
+                        performAttack(rc);
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+
     static void goTowardsEnemyPaint(RobotController rc) throws GameActionException {
         nearbyTiles = rc.senseNearbyMapInfos();
         MapLocation[] nearbyRuins = rc.senseNearbyRuins(-1);
@@ -106,9 +142,17 @@ public class Mopper {
             }
             rc.setIndicatorLine(rc.getLocation(), target, 155, 255, 155);
         }
+        if (rc.isActionReady()) {
+            for (MapInfo loc : rc.senseNearbyMapInfos(2)) {
+                if (loc.getPaint().isEnemy()) {
+                    rc.attack(loc.getMapLocation());
+                    return;
+                }
+            }
+        }
     }
 
-    static boolean refillSplasher(RobotController rc) throws GameActionException {
+    static boolean rescue(RobotController rc) throws GameActionException {
         if (rc.getPaint() < 60) return false;
         RobotInfo[] allies = rc.senseNearbyRobots(2, rc.getTeam());
         MapLocation paint = Communicator.paintTowers.closest(rc.getLocation());
@@ -117,6 +161,14 @@ public class Mopper {
                 if (rc.canTransferPaint(r.getLocation(), 25)) {
                     rc.transferPaint(r.getLocation(), 25);
                     return true;
+                }
+            }
+            else if (r.getType().isRobotType() && paint != null) {
+                if (paint.isWithinDistanceSquared(r.getLocation(), 100) && r.paintAmount < 10) {
+                    if (rc.canTransferPaint(r.getLocation(), 10)) {
+                        rc.transferPaint(r.getLocation(), 10);
+                        return true;
+                    }
                 }
             }
         }
@@ -183,8 +235,10 @@ public class Mopper {
             }
             else {
                 for (RobotInfo enemy : enemies) {
-                    rc.attack(enemy.getLocation());
-                    return;
+                    if (enemy.getType().isRobotType()) {
+                        rc.attack(enemy.getLocation());
+                        return;
+                    }
                 }
             }
         }
@@ -192,16 +246,6 @@ public class Mopper {
             rc.attack(hitLoc);
             return;
         }
-
-
-        // Attack any tile with enemy paint on it
-        for (MapInfo loc : rc.senseNearbyMapInfos(2)) {
-            if (loc.getPaint().isEnemy()) {
-                rc.attack(loc.getMapLocation());
-                return;
-            }
-        }
-
     }
     static void endTurn(RobotController rc) {
         rc.setIndicatorString(RobotPlayer.indicator);

@@ -104,6 +104,7 @@ public class SoldierMicro {
         boolean inTowerRange = false;
         int distToTower = INF;
         int pti = 0;
+        boolean canHit = false;
         public MicroInfo(Direction dir) throws GameActionException {
             this.dir = dir;
             this.location = rc.getLocation().add(dir);
@@ -113,7 +114,12 @@ public class SoldierMicro {
                 return;
             }
             MapInfo mi = rc.senseMapInfo(this.location);
-            if (enemyTower.isWithinDistanceSquared(location, RANGE)) inTowerRange = true;
+
+            if (enemyTower.isWithinDistanceSquared(location, RANGE)) {
+                inTowerRange = true;
+                canHit = true;
+            }
+
             distToTower = enemyTower.distanceSquaredTo(location);
             pt = mi.getPaint();
             if (pt.isEnemy()) {
@@ -131,6 +137,9 @@ public class SoldierMicro {
             if (!canMove) return;
             if (unit.getType() == UnitType.MOPPER) {
                 if (unit.getLocation().isWithinDistanceSquared(location, 2)) numMoppers++;
+            }
+            if (unit.getType().isTowerType() && Util.inTowerRange(location, unit)) {
+                inTowerRange = true;
             }
         }
 
@@ -151,8 +160,8 @@ public class SoldierMicro {
             if(!canMove && M.canMove) return false;
 
             if(canAttack) {
-                if (inTowerRange && !M.inTowerRange) return true;
-                if (!inTowerRange && M.inTowerRange) return false;
+                if (canHit && !M.canHit) return true;
+                if (!canHit && M.canHit) return false;
             }
             else {
                 if (inTowerRange && !M.inTowerRange) return false;

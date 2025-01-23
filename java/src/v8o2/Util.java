@@ -16,6 +16,12 @@ public class Util {
                 t == UnitType.LEVEL_TWO_PAINT_TOWER;
     }
 
+    public static boolean isDefenseTower(UnitType t) {
+        return  t == UnitType.LEVEL_ONE_DEFENSE_TOWER ||
+                t == UnitType.LEVEL_TWO_DEFENSE_TOWER ||
+                t == UnitType.LEVEL_THREE_DEFENSE_TOWER;
+    }
+
     static final Direction[] directions = {
             Direction.NORTH,
             Direction.NORTHEAST,
@@ -26,11 +32,11 @@ public class Util {
             Direction.WEST,
             Direction.NORTHWEST,
     };
-    static final int SRP_BUILDER = 2;
+    static final int SRP_BUILDER = 3;
     public static boolean isSrpBuilder(RobotController rc, int id) {
         if (rc.getNumberTowers() < 3) return false;
         double r = (double)(rc.getMapWidth() * rc.getMapHeight() - 400) / 3600;
-        return rc.getRoundNum() > 30 + (1-r)*50 && id % SRP_BUILDER == 0;
+        return /*rc.getRoundNum() > 30 + (1-r)*50 &&*/ id % SRP_BUILDER == 0;
     }
 
     public static boolean shouldKMS(RobotController rc) throws GameActionException {
@@ -47,6 +53,11 @@ public class Util {
         return crowded >= 7;*/
         return false;
     }
+
+    static boolean inTowerRange(MapLocation loc, RobotInfo tower) {
+        return loc.isWithinDistanceSquared(tower.getLocation(), tower.getType().actionRadiusSquared);
+    }
+
     static int distance(MapLocation A, MapLocation B) {
         return Math.max(Math.abs(A.x - B.x), Math.abs(A.y - B.y));
     }

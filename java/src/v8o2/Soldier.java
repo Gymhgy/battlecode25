@@ -21,7 +21,13 @@ public class Soldier {
             {1, 2, 1, 2, 1},
             {2, 1, 1, 1, 2},
     };
-
+    static int[][] defenseTowerPattern = {
+            {1, 1, 2, 1, 1},
+            {1, 2, 2, 2, 1},
+            {2, 2, 0, 2, 2},
+            {1, 2, 2, 2, 1},
+            {1, 1, 2, 1, 1},
+    };
 
     static PaintType numToPaint(int num) {
         switch (num) {
@@ -96,7 +102,7 @@ public class Soldier {
         }
         if (rc.getNumberTowers() == 25) curRuin = null;
 
-        if (curRuin == null) {
+        if (curRuin == null && curSRP == null) {
             boolean refilling = Refill.refill(rc);
             if (refilling){
                 endTurn(rc);
@@ -217,6 +223,10 @@ public class Soldier {
         int hp = rc.getHealth();
         int paint = rc.getPaint();
         int enemyHp = rc.senseRobotAtLocation(closestEnemyTower).health;
+        /*if (hp <= 40) {
+            if (enemyHp / 50 <= mult) return true;
+            return false;
+        }*/
         if (enemyHp / 50 <= (paint / 6) * mult) return true;
         return false;
     }
@@ -344,6 +354,7 @@ public class Soldier {
 
         // TODO: unroll this loop, uses so much bytecode rn
         MapLocation[] surroundingLocations = rc.getAllLocationsWithinRadiusSquared(ruinLoc, 2);
+        boolean seePaint = false, seeMoney = false;
         for (MapLocation loc : surroundingLocations) {
             if (rc.canSenseLocation(loc) && rc.isLocationOccupied(loc)) {
                 RobotInfo robot = rc.senseRobotAtLocation(loc);
@@ -353,15 +364,18 @@ public class Soldier {
             }
             if (rc.senseMapInfo(loc).getMark() == PaintType.ALLY_SECONDARY) {
                 curRuinType = UnitType.LEVEL_ONE_PAINT_TOWER;
+                seePaint = true;
             }
-            else if (rc.senseMapInfo(loc).getMark() == PaintType.ALLY_SECONDARY) {
+            else if (rc.senseMapInfo(loc).getMark() == PaintType.ALLY_PRIMARY) {
                 curRuinType = UnitType.LEVEL_ONE_MONEY_TOWER;
+                seeMoney = true;
             }
 
-                if (soldierCount >= 2 && !rc.getLocation().isWithinDistanceSquared(ruinLoc, 2)) {
+            if (soldierCount >= 2 && !rc.getLocation().isWithinDistanceSquared(ruinLoc, 2)) {
                 return false;
             }
         }
+        if (seeMoney && seePaint) curRuinType = UnitType.LEVEL_ONE_DEFENSE_TOWER;
         int en = 0;
         int empty = 0;
         for (int i = -2; i <= 2; i++) {
@@ -402,17 +416,44 @@ public class Soldier {
     static void tryBuild(RobotController rc) throws GameActionException {
         if (rc.getChips() > 1000 && rc.canCompleteTowerPattern(curRuinType, curRuin.getMapLocation())) {
             rc.completeTowerPattern(curRuinType, curRuin.getMapLocation());
+
+            /*if (curRuinType != UnitType.LEVEL_ONE_DEFENSE_TOWER) {
+                MapLocation markLoc = null;
+                boolean seeOne = false;
+                boolean seeTwo = false;
+                for (int i = RobotPlayer.directions.length; i-- > 0; ) {
+                    MapLocation loc = curRuin.getMapLocation().add(RobotPlayer.directions[i]);
+                    if (rc.canSenseLocation(loc)) {
+                        PaintType m = rc.senseMapInfo(loc).getMark();
+                        if (m == PaintType.ALLY_PRIMARY) seeOne = true;
+                        if (m == PaintType.ENEMY_SECONDARY) seeTwo = true;
+                        if (rc.canMark(loc) && m == PaintType.EMPTY) {
+                            markLoc = loc;
+                        }
+                    }
+                }
+                if (!seeOne || !seeTwo) if(markLoc != null) rc.mark(markLoc, curRuinType == UnitType.LEVEL_ONE_MONEY_TOWER);
+            }*/
+
             if(rc.canTransferPaint(curRuin.getMapLocation(), -Refill.getEmptyPaintAmount(rc))) {
                 rc.transferPaint(curRuin.getMapLocation(), -Refill.getEmptyPaintAmount(rc));
             }
-            curRuinType = curRuinType == UnitType.LEVEL_ONE_PAINT_TOWER ? UnitType.LEVEL_ONE_MONEY_TOWER : UnitType.LEVEL_ONE_PAINT_TOWER;
+            curRuinType = switch(curRuinType) {
+                case LEVEL_ONE_PAINT_TOWER -> UnitType.LEVEL_ONE_MONEY_TOWER;
+                case LEVEL_ONE_MONEY_TOWER -> UnitType.LEVEL_ONE_PAINT_TOWER;
+                default -> FastMath.rand256() % 2 == 0 ? UnitType.LEVEL_ONE_PAINT_TOWER : UnitType.LEVEL_ONE_MONEY_TOWER;
+            };
             curRuin = null;
             return;
         }
         Pathfinding.moveToward(rc, curRuin.getMapLocation());
 
         if (!rc.isActionReady()) return;
-        int[][] tower = curRuinType == UnitType.LEVEL_ONE_MONEY_TOWER ? moneyTowerPattern : paintTowerPattern;
+        int[][] tower = switch(curRuinType) {
+            case LEVEL_ONE_PAINT_TOWER -> paintTowerPattern;
+            case LEVEL_ONE_MONEY_TOWER -> moneyTowerPattern;
+            default -> defenseTowerPattern;
+        };
         // Paint under self first... then 5x5
         // Paint under self
         MapLocation myLoc = rc.getLocation();
@@ -459,6 +500,9 @@ public class Soldier {
     static boolean canSRP(RobotController rc, MapLocation srpLoc) throws GameActionException {
         if (badSRPs.contains(srpLoc)) return false;
         if (!centerSRP(srpLoc)) return false;
+
+
+
         if (rc.canSenseLocation(srpLoc) && rc.senseMapInfo(srpLoc).isResourcePatternCenter()) return false;
         if (!rc.getLocation().isWithinDistanceSquared(srpLoc, 2)) {
             int soldierCount = 0;
@@ -472,6 +516,8 @@ public class Soldier {
                     }
                 }
                 if (soldierCount >= 2) {
+                    /*blacklist.add(srpLoc);
+                    popTime.add(rc.getRoundNum());*/
                     return false;
                 }
             }
@@ -495,7 +541,11 @@ public class Soldier {
                     badSRPs.add(srpLoc);
                     return false;
                 }
-                if (mi.getPaint().isEnemy()) return false;
+                if (mi.getPaint().isEnemy()) {
+                    //blacklist.add(srpLoc);
+                    //popTime.add(rc.getRoundNum());
+                    return false;
+                }
             }
         }
         return true;
