@@ -41,24 +41,24 @@ public class Soldier {
         return PaintType.EMPTY;
     }
     static UnitType curRuinType = null;
-    static MapInfo curRuin = null;
+    static MapLocation curRuin = null;
     static MapInfo[] nearbyTiles;
     static RobotInfo[] nearbyAllies;
     static MapLocation curSRP = null;
     static MapLocation closestEnemyTower;
 
-    static FastLocSet paintTowers = new FastLocSet();
+    static FastLocSet ruins = new FastLocSet();
     static SoldierMicro soldierMicro;
     static void init(RobotController rc) throws GameActionException {
         Refill.init(80);
         soldierMicro = new SoldierMicro(rc);
     }
-    /*static void updateTarget(RobotController rc) {
+    static void updateTarget(RobotController rc) {
         MapLocation closest = Communicator.enemyTowers.closest(rc.getLocation());
         if (closest != null && closest.isWithinDistanceSquared(rc.getLocation(), 16)) {
             closestEnemyTower = closest;
         }
-    }*/
+    }
     static void run(RobotController rc) throws GameActionException {
         nearbyTiles = rc.senseNearbyMapInfos();
         nearbyAllies = rc.senseNearbyRobots(-1, rc.getTeam());
@@ -70,7 +70,7 @@ public class Soldier {
         if (closestEnemyTower == null) closestEnemyTower = Communicator.enemyTowers.closest(rc.getLocation());
         //updateTarget(rc);
         attackTower(rc);
-        if (closestEnemyTower!=null && closestEnemyTower.isWithinDistanceSquared(rc.getLocation(), 16)) {
+        if (closestEnemyTower!=null && closestEnemyTower.isWithinDistanceSquared(rc.getLocation(), 20)) {
             if (canBeat(rc))
                 soldierMicro.doMicro(closestEnemyTower);
             else {
@@ -86,8 +86,11 @@ public class Soldier {
                 if (tile.getMapLocation().isWithinDistanceSquared(rc.getLocation(), 2)) {
                     continue;
                 }
-                if (ruinCheck(rc, tile)) {
-                    curRuin = tile;
+                if (!tile.hasRuin()) continue;
+                ruins.add(tile.getMapLocation());
+
+                if (ruinCheck(rc, tile.getMapLocation())) {
+                    curRuin = tile.getMapLocation();
                     if (curRuinType == null) {
                         if (rc.getRoundNum() < 20) {
                             curRuinType = UnitType.LEVEL_ONE_MONEY_TOWER;
@@ -108,6 +111,10 @@ public class Soldier {
                 endTurn(rc);
                 return;
             }
+            else {
+                //curRuin = ruins.closest(rc.getLocation());
+                //if (curRuin != null && blacklist.contains(curRuin)) curRuin = null;
+            }
         }
         else {
             int initial = Refill.minPaint;
@@ -122,7 +129,7 @@ public class Soldier {
         if (curRuin != null) {
             MapLocation toMark = null;
             boolean alrMarked = false;
-            for (MapLocation loc : rc.getAllLocationsWithinRadiusSquared(curRuin.getMapLocation(), 2)) {
+            for (MapLocation loc : rc.getAllLocationsWithinRadiusSquared(curRuin, 2)) {
                 if (rc.canSenseLocation(loc) && rc.senseMapInfo(loc).getMark().isAlly()) {
                     alrMarked = true;
                     break;
@@ -179,7 +186,7 @@ public class Soldier {
                     if(rc.isActionReady())
                         paintRandomly(rc);
                 }*/
-                if (rc.getRoundNum() > (rc.getMapHeight() * rc.getMapWidth()) * 7 / 64 + 6 && rc.getID() % 2 == 0) {
+                if (rc.getID() % 3 == -1) {
                     if (fill(rc)) {
                         if (closestEnemyTower != null) {
                             Pathfinding.moveToward(rc, closestEnemyTower);
@@ -242,7 +249,7 @@ public class Soldier {
 
 
     private static boolean fill(RobotController rc) throws GameActionException {
-        MapInfo[] nearby = rc.senseNearbyMapInfos(UnitType.SOLDIER.actionRadiusSquared);
+        /*MapInfo[] nearby = rc.senseNearbyMapInfos(UnitType.SOLDIER.actionRadiusSquared);
         int cnt = nearby.length;
         for (MapInfo mi : nearby) {
             if (mi.isWall() || mi.hasRuin()) cnt--;
@@ -252,7 +259,8 @@ public class Soldier {
         if (rc.isActionReady()) {
             paintRandomly(rc);
         }
-        return cnt == 0;
+        return cnt == 0;*/
+        return true;
     }
 
     private static void acquireSRP(RobotController rc) throws GameActionException {
@@ -328,19 +336,16 @@ public class Soldier {
             else break;
         }
     }
-    static boolean ruinCheck(RobotController rc, MapInfo ruin) throws GameActionException {
-        if (blacklist.contains(ruin.getMapLocation())) return false;
-        if (!ruin.hasRuin()) return false;
+    static boolean ruinCheck(RobotController rc, MapLocation ruin) throws GameActionException {
+        if (blacklist.contains(ruin)) return false;
         boolean ret = ruinCheckOld(rc, ruin);
         if (!ret) {
-            blacklist.add(ruin.getMapLocation());
+            blacklist.add(ruin);
             popTime.add(rc.getRoundNum());
         }
         return ret;
     }
-    static boolean ruinCheckOld(RobotController rc, MapInfo ruin) throws GameActionException {
-        if (!ruin.hasRuin()) return false;
-        MapLocation ruinLoc = ruin.getMapLocation();
+    static boolean ruinCheckOld(RobotController rc, MapLocation ruinLoc) throws GameActionException {
 
         if (!rc.canSenseLocation(ruinLoc)) {
             // uh we can't see the damn ruin... return true to be safe
@@ -348,6 +353,10 @@ public class Soldier {
         }
         RobotInfo ri = rc.senseRobotAtLocation(ruinLoc);
         if (ri != null && ri.getType().isTowerType()) {
+            ruins.remove(ruinLoc);
+            if(rc.getPaint() < 150) {
+                Refill.refilling = true;
+            }
             return false;
         }
         int soldierCount = 0;
@@ -371,7 +380,7 @@ public class Soldier {
                 seeMoney = true;
             }
 
-            if (soldierCount >= 2 && !rc.getLocation().isWithinDistanceSquared(ruinLoc, 2)) {
+            if (soldierCount >= 3 && !rc.getLocation().isWithinDistanceSquared(ruinLoc, 2)) {
                 return false;
             }
         }
@@ -381,7 +390,7 @@ public class Soldier {
         for (int i = -2; i <= 2; i++) {
             for (int j = -2; j <= 2; j++) {
                 if (i == 0 && j == 0) continue;
-                MapLocation loc = FastMath.addVec(ruin.getMapLocation(), new MapLocation(i, j));
+                MapLocation loc = FastMath.addVec(ruinLoc, new MapLocation(i, j));
                 if (rc.canSenseLocation(loc)) {
                     PaintType pt = rc.senseMapInfo(loc).getPaint();
                     if (pt.isEnemy()) {
@@ -409,13 +418,19 @@ public class Soldier {
             }
         }
         if (en >= 10) return false;
-        if (empty > (rc.getPaint() * 5) / 1.5) return false;
+        if (empty > (rc.getPaint() / 5) / Math.max(1, soldierCount)) {
+            Refill.refilling = true;
+            curRuin = ruinLoc;
+            return false;
+        }
         return true;
     }
 
+    static boolean suckle = false;
     static void tryBuild(RobotController rc) throws GameActionException {
-        if (rc.getChips() > 1000 && rc.canCompleteTowerPattern(curRuinType, curRuin.getMapLocation())) {
-            rc.completeTowerPattern(curRuinType, curRuin.getMapLocation());
+        if (rc.getChips() > 1000 && rc.canCompleteTowerPattern(curRuinType, curRuin)) {
+            rc.completeTowerPattern(curRuinType, curRuin);
+            ruins.remove(curRuin);
 
             /*if (curRuinType != UnitType.LEVEL_ONE_DEFENSE_TOWER) {
                 MapLocation markLoc = null;
@@ -435,8 +450,10 @@ public class Soldier {
                 if (!seeOne || !seeTwo) if(markLoc != null) rc.mark(markLoc, curRuinType == UnitType.LEVEL_ONE_MONEY_TOWER);
             }*/
 
-            if(rc.canTransferPaint(curRuin.getMapLocation(), -Refill.getEmptyPaintAmount(rc))) {
-                rc.transferPaint(curRuin.getMapLocation(), -Refill.getEmptyPaintAmount(rc));
+            if(rc.canTransferPaint(curRuin, -Refill.getEmptyPaintAmount(rc))) {
+                rc.transferPaint(curRuin, -Refill.getEmptyPaintAmount(rc));
+            } else if(rc.getPaint() < 150) {
+                Refill.refilling = true;
             }
             curRuinType = switch(curRuinType) {
                 case LEVEL_ONE_PAINT_TOWER -> UnitType.LEVEL_ONE_MONEY_TOWER;
@@ -446,7 +463,7 @@ public class Soldier {
             curRuin = null;
             return;
         }
-        Pathfinding.moveToward(rc, curRuin.getMapLocation());
+        Pathfinding.moveToward(rc, curRuin);
 
         if (!rc.isActionReady()) return;
         int[][] tower = switch(curRuinType) {
@@ -457,8 +474,8 @@ public class Soldier {
         // Paint under self first... then 5x5
         // Paint under self
         MapLocation myLoc = rc.getLocation();
-        if (canPaintReal(rc, myLoc) && myLoc.isWithinDistanceSquared(curRuin.getMapLocation(), 8)){
-            MapLocation delta = FastMath.minusVec(curRuin.getMapLocation(), myLoc);
+        if (canPaintReal(rc, myLoc) && myLoc.isWithinDistanceSquared(curRuin, 8)){
+            MapLocation delta = FastMath.minusVec(curRuin, myLoc);
             PaintType ideal = numToPaint(tower[delta.x + 2][delta.y + 2]);
             if (!rc.senseMapInfo(myLoc).getPaint().equals(ideal)) {
                 //System.out.println(rc.getLocation().toString() + " Painting at my position: " + myLoc);
@@ -470,7 +487,7 @@ public class Soldier {
         for (int i = -2; i <= 2; i++) {
             for (int j = -2; j <= 2; j++) {
                 if (i == 0 && j == 0) continue;
-                MapLocation loc = FastMath.addVec(curRuin.getMapLocation(), new MapLocation(i, j));
+                MapLocation loc = FastMath.addVec(curRuin, new MapLocation(i, j));
                 if (canPaintReal(rc, loc)) {
                     MapInfo mi = rc.senseMapInfo(loc);
                     PaintType ideal = numToPaint(tower[i + 2][j + 2]);
@@ -512,10 +529,11 @@ public class Soldier {
                 if (rc.canSenseLocation(loc) && rc.isLocationOccupied(loc)) {
                     RobotInfo robot = rc.senseRobotAtLocation(loc);
                     if (robot.getType() == UnitType.SOLDIER && robot.getTeam() == rc.getTeam()) {
-                        soldierCount++;
+                        if (Util.isSrpBuilder(rc, robot.getID()))
+                            soldierCount++;
                     }
                 }
-                if (soldierCount >= 2) {
+                if (soldierCount >= 3) {
                     /*blacklist.add(srpLoc);
                     popTime.add(rc.getRoundNum());*/
                     return false;
@@ -593,7 +611,7 @@ public class Soldier {
 
     static void endTurn(RobotController rc) throws GameActionException {
         if (curRuin != null) {
-            rc.setIndicatorLine(rc.getLocation(), curRuin.getMapLocation(), 255, 0, 0);
+            rc.setIndicatorLine(rc.getLocation(), curRuin, 255, 0, 0);
         } else if (curSRP != null) {
             rc.setIndicatorLine(rc.getLocation(), curSRP, 255, 0, 255);
 

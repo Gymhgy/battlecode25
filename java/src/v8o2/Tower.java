@@ -78,23 +78,31 @@ public class Tower {
 
 
             UnitType type = UnitType.SOLDIER;
-            if (rc.getRoundNum() == 1 && enemyPaints > 12) {
+            /*if (rc.getRoundNum() == 1 && enemyPaints > 12) {
                 type = UnitType.MOPPER;
+            }*/
+            /*if (og && rc.getRoundNum() == 2 && Util.isPaintTower(rc.getType())) {
+                type = UnitType.SPLASHER;
             }
-            else if (og && rc.getRoundNum() < 20) {
+            else*/ if (og && rc.getRoundNum() < 20) {
                 type = UnitType.SOLDIER;
             }
-            else if (rc.getRoundNum() < 150 && FastMath.rand256() % 4 < 1) {
-                type = UnitType.MOPPER;
+            else if (rc.getRoundNum() < 50) {
+                var distr = new UnitType[] {UnitType.SOLDIER, UnitType.SOLDIER, UnitType.SOLDIER, UnitType.MOPPER, UnitType.MOPPER, UnitType.SPLASHER};
+                type = distr[FastMath.rand256() % distr.length];
             }
             else {
-                var distr = new UnitType[] {UnitType.SOLDIER, UnitType.SOLDIER, UnitType.MOPPER, UnitType.MOPPER, UnitType.SPLASHER, UnitType.SPLASHER};
+                var distr = new UnitType[] {UnitType.SOLDIER, UnitType.SOLDIER, UnitType.MOPPER, UnitType.MOPPER, UnitType.SPLASHER, UnitType.SPLASHER,
+                        UnitType.SOLDIER, UnitType.MOPPER, UnitType.SPLASHER, UnitType.SPLASHER};
                 type = distr[FastMath.rand256() % distr.length];
             }
 
             MapLocation nextLoc = decideOnSpawn(rc, en);
+            if (type == UnitType.SPLASHER && Util.isMoneyTower(rc.getType()))
+                nextLoc = null;
             if (nextLoc != null && rc.canBuildRobot(type, nextLoc)) {
                 rc.buildRobot(type, nextLoc);
+                lastSpawn = nextLoc;
             }
         }
 
@@ -110,6 +118,7 @@ public class Tower {
         rc.setIndicatorString(RobotPlayer.indicator);
     }
 
+    static MapLocation lastSpawn = null;
     static MapLocation decideOnSpawn(RobotController rc, MapLocation enemy) throws GameActionException {
         RobotPlayer.indicator+="\nspawning: ";
         RobotPlayer.indicator+=Clock.getBytecodeNum() + "|";
@@ -144,8 +153,8 @@ public class Tower {
                 int dist = spawner.distanceSquaredTo(enemy);
                 score -= dist;
                 if (dist <= UnitType.LEVEL_THREE_PAINT_TOWER.actionRadiusSquared) score -= 10000;
-            } else {
-                score -= spawner.distanceSquaredTo(center);
+            } else if (lastSpawn != null){
+                score -= spawner.distanceSquaredTo(lastSpawn);
             }
 
             score += FastMath.rand256() % 10;

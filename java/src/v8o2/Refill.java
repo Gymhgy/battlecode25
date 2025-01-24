@@ -15,7 +15,7 @@ public class Refill {
     static MapLocation closestTower = null;
     static int lastRefill = 0;
     static boolean refill(RobotController rc) throws GameActionException {
-        if ((rc.getPaint() < minPaint && rc.getRoundNum() - lastRefill > 25) || refilling) {
+        if ((rc.getPaint() < minPaint /*&& rc.getRoundNum() - lastRefill > 25*/) || refilling) {
             closestTower = Refill.closestRefillTower(rc, Communicator.paintTowers);
             refilling = Refill.refillPaint(rc, closestTower);
         }
@@ -30,6 +30,7 @@ public class Refill {
         RobotInfo[] nearby = rc.senseNearbyRobots(-1, rc.getTeam());
         for (int i = nearby.length; i-->0; ) {
             if (Util.isMoneyTower(nearby[i].getType())) {
+                if (closestTower == nearby[i].getLocation()) closestTower = null;
                 if (nearby[i].getPaintAmount() > 0) {
                     return nearby[i].getLocation();
                 }
@@ -37,8 +38,8 @@ public class Refill {
         }
         if (closestTower != null) return closestTower;
         // TODO: if you see it and its super crowded, try something else.
-        if (FastMath.rand256() % 3 == 0)
-            return towers.secondClosest(rc.getLocation());
+        //if (FastMath.rand256() % 3 == 0)
+        //    return towers.secondClosest(rc.getLocation());
         return towers.closest(rc.getLocation());
     }
 
@@ -56,9 +57,9 @@ public class Refill {
             }
             else if (Util.isPaintTower(a)) {
 
-                if (rc.getChips() > 1300 && ri.getPaintAmount() + amount < 100) {
+                /*if (rc.getChips() > 1300 && ri.getPaintAmount() + amount < 100) {
                     return true;
-                }
+                }*/
                 if (!rc.getLocation().isAdjacentTo(loc)) {
                     int crowd = 0;
                     for (Direction d : RobotPlayer.directions) {
@@ -100,10 +101,10 @@ public class Refill {
                 }
             }
         }
-        if (rc.getPaint() > minPaint) {
-            return false;
-        }
-        else {
+        /*if (rc.getPaint() > minPaint) {
+            //return false;
+        }*/
+         {
             Pathfinding.moveToward(rc, loc);
         }
         return true;

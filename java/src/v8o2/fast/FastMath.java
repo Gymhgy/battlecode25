@@ -66,4 +66,7 @@ public class FastMath {
         return Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
     }
 
+    public static int chebyshev(MapLocation a, MapLocation b) {
+        return Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
+    }
 }

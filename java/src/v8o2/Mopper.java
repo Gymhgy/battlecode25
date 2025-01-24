@@ -69,8 +69,9 @@ public class Mopper {
 
     static void harass(RobotController rc) throws GameActionException {
         if (rc.isActionReady()) performAttack(rc);
-        if (!rc.isActionReady() || !rc.isMovementReady()) return;
+        if (!rc.isMovementReady()) return;
         RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(8, rc.getTeam().opponent());
+        MapLocation[] ruins = rc.senseNearbyRuins(-1);
         for (RobotInfo enemy : nearbyEnemies) {
             if (enemy.paintAmount == 0) continue;
             if (enemy.getType() == UnitType.SOLDIER || enemy.getType() == UnitType.SPLASHER) {
@@ -79,7 +80,7 @@ public class Mopper {
                     if (rc.canSenseLocation(potentialMove) && rc.senseMapInfo(potentialMove).getPaint().isEnemy()) continue;
                     if (rc.canMove(dir) && potentialMove.isAdjacentTo(enemy.getLocation())) {
                         rc.move(dir);
-                        performAttack(rc);
+                        if (rc.isActionReady()) performAttack(rc);
                         return;
                     }
                 }

@@ -1,9 +1,7 @@
 package v8o2;
 
 import battlecode.common.*;
-import v7def.fast.FastLocIntMap;
-import v7def.fast.FastLocSet;
-import v7def.fast.FastMath;
+import v8o2.fast.*;
 
 public class Splasher {
     private static FastLocSet allyPaintTowers = new FastLocSet();
@@ -96,12 +94,24 @@ public class Splasher {
         }
     }
 
-    private static int getWorth(MapInfo mi) {
+    private static int getWorth(MapInfo mi, MapLocation[] ruins) {
         PaintType pt = mi.getPaint();
         //TODO: tweak this...
         if (mi.hasRuin()) return 0;
-        if (pt.isAlly()) return 0;
-        if (pt.isEnemy()) return 4;
+        if (pt.isAlly()) {
+            for (MapLocation r : ruins) {
+                if(FastMath.chebyshev(r, mi.getMapLocation()) <= 2)
+                    return -2;
+            }
+            return 0;
+        }
+        if (pt.isEnemy()) {
+            for (MapLocation r : ruins) {
+                if(FastMath.chebyshev(r, mi.getMapLocation()) <= 2)
+                    return 7;
+            }
+            return 4;
+        }
         return 1;
     }
     private static int worthThreshold = 12; // leaving this here: easier to see and tweak
@@ -125,6 +135,7 @@ public class Splasher {
         MapLocation best = null;
         FastLocIntMap cache = new FastLocIntMap();
         String ind = "|";
+        MapLocation[] ruins = rc.senseNearbyRuins(-1);
         for (int[] square2 : attackTiles2) {
             MapLocation squareMapLoc = rc.getLocation().translate(square2[0], square2[1]);
             if (!rc.canSenseLocation(squareMapLoc)) continue;
@@ -138,7 +149,7 @@ public class Splasher {
                     worth += cache.getVal(loc);
                 }
                 else {
-                    int val = getWorth(mi);
+                    int val = getWorth(mi, ruins);
                     RobotInfo r = rc.senseRobotAtLocation(loc);
                     if (r != null) {
                         if (r.getType().isTowerType() && r.getTeam() != rc.getTeam()) worth += 12;
@@ -156,6 +167,7 @@ public class Splasher {
         }
         RobotPlayer.indicator += ind;
         //rc.setIndicatorString(ind);
+        int thresh = rc.getRoundNum() < 150 ? 24 : worthThreshold;
         if (best != null && canPaintReal(rc, best) && bestWorth > worthThreshold) {
             if (rc.canAttack(best)) {
                 rc.attack(best);

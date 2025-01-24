@@ -139,6 +139,8 @@ public class SoldierMicro {
                 if (unit.getLocation().isWithinDistanceSquared(location, 2)) numMoppers++;
             }
             if (unit.getType().isTowerType() && Util.inTowerRange(location, unit)) {
+                if (location.isWithinDistanceSquared(unit.getLocation(), RANGE))
+                    canHit = true;
                 inTowerRange = true;
             }
         }
