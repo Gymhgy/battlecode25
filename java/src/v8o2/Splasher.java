@@ -18,10 +18,23 @@ public class Splasher {
         splasherMicro = new SplasherMicro(rc);
     }
 
-    static void updateTarget(RobotController rc) {
-        MapLocation closest = Communicator.enemyTowers.closest(rc.getLocation());
-        if (closest != null && closest.isWithinDistanceSquared(rc.getLocation(), 12)) {
-            target = closest;
+    static void updateTarget(RobotController rc, MapLocation[] ruins) throws GameActionException {
+        int best = 10000000;
+        MapLocation bl = null;
+        for (int i = ruins.length; i-->0; ) {
+            RobotInfo r = rc.senseRobotAtLocation(ruins[i]);
+            if (!(r != null && r.getTeam() != rc.getTeam() && r.getType().isTowerType())) {
+                continue;
+            }
+            int d = rc.getLocation().distanceSquaredTo(ruins[i]);
+            if (d > 16) continue;
+            if (d < best) {
+                best = d;
+                bl = ruins[i];
+            }
+        }
+        if (best <= 16) {
+            target = bl;
         }
     }
 
@@ -35,9 +48,18 @@ public class Splasher {
             rc.setIndicatorString("refilling");
             return;
         }
+
+        RobotPlayer.indicator += "\nworth: " + Clock.getBytecodeNum() + "|";
+        MapLocation[] ruins = rc.senseNearbyRuins(-1);
+        updateRuinWorths(rc, ruins);
+        RobotPlayer.indicator += Clock.getBytecodeNum() + "\n";
+        /*RobotPlayer.indicator += "\ncache: " + Clock.getBytecodeNum() + "|";
+        computeCache(rc);
+        RobotPlayer.indicator += Clock.getBytecodeNum() + "\n";*/
+
         if (target != null && !Communicator.enemyTowers.contains(target)) target = null;
         if (target == null) target = Communicator.enemyTowers.closest(rc.getLocation());
-        updateTarget(rc);
+        updateTarget(rc, ruins);
         if (target != null) {
             if (rc.canSenseLocation(target)) {
                 RobotInfo r = rc.senseRobotAtLocation(target);
@@ -79,6 +101,10 @@ public class Splasher {
             prevNext = next;
         }
 
+        RobotPlayer.indicator += "\nworth: " + Clock.getBytecodeNum() + "|";
+        updateRuinWorths(rc, rc.senseNearbyRuins(-1));
+        RobotPlayer.indicator += Clock.getBytecodeNum() + "\n";
+
         if (target != null)
             rc.setIndicatorLine(rc.getLocation(), target, 255, 255, 255);
         endTurn(rc);
@@ -100,22 +126,90 @@ public class Splasher {
         }
     }
 
-    private static int getWorth(MapInfo mi, MapLocation[] ruins) {
+    static void computeCache(RobotController rc) throws GameActionException {
+        for (MapInfo mi : rc.senseNearbyMapInfos()) {
+            MapLocation loc = mi.getMapLocation();
+            if (cache.contains(loc)) {
+            } else {
+                int val = getWorth(mi);
+                cache.add(loc, val);
+            }
+        }
+    }
+
+    static FastLocSet nearRuins = new FastLocSet();
+    static FastLocSet seens = new FastLocSet();
+    private static void updateRuinWorths(RobotController rc, MapLocation[] ruins) {
+        for (MapLocation ruin : ruins) {
+            if (seens.contains(ruin)) continue;
+
+            MapLocation loc;
+            loc = ruin.translate(-2, -2);
+            if (loc.x >= 0 && loc.y >= 0) nearRuins.add(loc);
+            loc = ruin.translate(-2, -1);
+            if (loc.x >= 0 && loc.y >= 0) nearRuins.add(loc);
+            loc = ruin.translate(-2, 0);
+            if (loc.x >= 0 && loc.y >= 0) nearRuins.add(loc);
+            loc = ruin.translate(-2, 1);
+            if (loc.x >= 0 && loc.y >= 0) nearRuins.add(loc);
+            loc = ruin.translate(-2, 2);
+            if (loc.x >= 0 && loc.y >= 0) nearRuins.add(loc);
+
+            loc = ruin.translate(-1, -2);
+            if (loc.x >= 0 && loc.y >= 0) nearRuins.add(loc);
+            loc = ruin.translate(-1, -1);
+            if (loc.x >= 0 && loc.y >= 0) nearRuins.add(loc);
+            loc = ruin.translate(-1, 0);
+            if (loc.x >= 0 && loc.y >= 0) nearRuins.add(loc);
+            loc = ruin.translate(-1, 1);
+            if (loc.x >= 0 && loc.y >= 0) nearRuins.add(loc);
+            loc = ruin.translate(-1, 2);
+            if (loc.x >= 0 && loc.y >= 0) nearRuins.add(loc);
+
+            loc = ruin.translate(0, -2);
+            if (loc.x >= 0 && loc.y >= 0) nearRuins.add(loc);
+            loc = ruin.translate(0, -1);
+            if (loc.x >= 0 && loc.y >= 0) nearRuins.add(loc);
+            loc = ruin.translate(0, 1);
+            if (loc.x >= 0 && loc.y >= 0) nearRuins.add(loc);
+            loc = ruin.translate(0, 2);
+            if (loc.x >= 0 && loc.y >= 0) nearRuins.add(loc);
+
+            loc = ruin.translate(1, -2);
+            if (loc.x >= 0 && loc.y >= 0) nearRuins.add(loc);
+            loc = ruin.translate(1, -1);
+            if (loc.x >= 0 && loc.y >= 0) nearRuins.add(loc);
+            loc = ruin.translate(1, 0);
+            if (loc.x >= 0 && loc.y >= 0) nearRuins.add(loc);
+            loc = ruin.translate(1, 1);
+            if (loc.x >= 0 && loc.y >= 0) nearRuins.add(loc);
+            loc = ruin.translate(1, 2);
+            if (loc.x >= 0 && loc.y >= 0) nearRuins.add(loc);
+
+            loc = ruin.translate(2, -2);
+            if (loc.x >= 0 && loc.y >= 0) nearRuins.add(loc);
+            loc = ruin.translate(2, -1);
+            if (loc.x >= 0 && loc.y >= 0) nearRuins.add(loc);
+            loc = ruin.translate(2, 0);
+            if (loc.x >= 0 && loc.y >= 0) nearRuins.add(loc);
+            loc = ruin.translate(2, 1);
+            if (loc.x >= 0 && loc.y >= 0) nearRuins.add(loc);
+            loc = ruin.translate(2, 2);
+            if (loc.x >= 0 && loc.y >= 0) nearRuins.add(loc);
+
+            seens.add(ruin);
+        }
+    }
+    private static int getWorth(MapInfo mi) {
         PaintType pt = mi.getPaint();
         //TODO: tweak this...
         if (mi.hasRuin()) return 0;
         if (pt.isAlly()) {
-            for (MapLocation r : ruins) {
-                if (FastMath.chebyshev(r, mi.getMapLocation()) <= 2)
-                    return -2;
-            }
+            if (nearRuins.contains(mi.getMapLocation())) return -2;
             return 0;
         }
         if (pt.isEnemy()) {
-            for (MapLocation r : ruins) {
-                if (FastMath.chebyshev(r, mi.getMapLocation()) <= 2)
-                    return 7;
-            }
+            if (nearRuins.contains(mi.getMapLocation())) return 7;
             return 4;
         }
         return 1;
@@ -137,7 +231,6 @@ public class Splasher {
             /*  RobotInfo[] enemies = rc.senseNearbyRobots(range, rc.getTeam().opponent());
             RobotInfo[] allies = rc.senseNearbyRobots(range, rc.getTeam());
             I'm leaving enemies/allies here... even though it isn't used right now. */
-        // TODO: Splashers deal 100 damage to towers (but not to robots)... so do we care about sensing nearby robots?
         //MapInfo[] attackTiles = rc.senseNearbyMapInfos(range);
 
         int bestWorth = 0;
@@ -147,7 +240,7 @@ public class Splasher {
         MapLocation squareMapLoc;
         squareMapLoc = rc.getLocation().translate(0, 0);
         if (rc.canSenseLocation(squareMapLoc)) {
-            int worth = totalWorth(rc, squareMapLoc, ruins);
+            int worth = totalWorth(rc, squareMapLoc);
             if (worth > worthThreshold) {
                 best = squareMapLoc;
                 bestWorth = worth;
@@ -156,7 +249,7 @@ public class Splasher {
 
         squareMapLoc = rc.getLocation().translate(-1, 0);
         if (rc.canSenseLocation(squareMapLoc)) {
-            int worth = totalWorth(rc, squareMapLoc, ruins);
+            int worth = totalWorth(rc, squareMapLoc);
             if (worth > worthThreshold) {
                 best = squareMapLoc;
                 bestWorth = worth;
@@ -165,7 +258,7 @@ public class Splasher {
 
         squareMapLoc = rc.getLocation().translate(1, 0);
         if (rc.canSenseLocation(squareMapLoc)) {
-            int worth = totalWorth(rc, squareMapLoc, ruins);
+            int worth = totalWorth(rc, squareMapLoc);
             if (worth > worthThreshold) {
                 best = squareMapLoc;
                 bestWorth = worth;
@@ -174,7 +267,7 @@ public class Splasher {
 
         squareMapLoc = rc.getLocation().translate(0, -1);
         if (rc.canSenseLocation(squareMapLoc)) {
-            int worth = totalWorth(rc, squareMapLoc, ruins);
+            int worth = totalWorth(rc, squareMapLoc);
             if (worth > worthThreshold) {
                 best = squareMapLoc;
                 bestWorth = worth;
@@ -183,7 +276,7 @@ public class Splasher {
 
         squareMapLoc = rc.getLocation().translate(0, 1);
         if (rc.canSenseLocation(squareMapLoc)) {
-            int worth = totalWorth(rc, squareMapLoc, ruins);
+            int worth = totalWorth(rc, squareMapLoc);
             if (worth > worthThreshold) {
                 best = squareMapLoc;
                 bestWorth = worth;
@@ -192,7 +285,7 @@ public class Splasher {
 
         squareMapLoc = rc.getLocation().translate(-1, -1);
         if (rc.canSenseLocation(squareMapLoc)) {
-            int worth = totalWorth(rc, squareMapLoc, ruins);
+            int worth = totalWorth(rc, squareMapLoc);
             if (worth > worthThreshold) {
                 best = squareMapLoc;
                 bestWorth = worth;
@@ -201,7 +294,7 @@ public class Splasher {
 
         squareMapLoc = rc.getLocation().translate(-1, 1);
         if (rc.canSenseLocation(squareMapLoc)) {
-            int worth = totalWorth(rc, squareMapLoc, ruins);
+            int worth = totalWorth(rc, squareMapLoc);
             if (worth > worthThreshold) {
                 best = squareMapLoc;
                 bestWorth = worth;
@@ -210,7 +303,7 @@ public class Splasher {
 
         squareMapLoc = rc.getLocation().translate(1, -1);
         if (rc.canSenseLocation(squareMapLoc)) {
-            int worth = totalWorth(rc, squareMapLoc, ruins);
+            int worth = totalWorth(rc, squareMapLoc);
             if (worth > worthThreshold) {
                 best = squareMapLoc;
                 bestWorth = worth;
@@ -219,7 +312,7 @@ public class Splasher {
 
         squareMapLoc = rc.getLocation().translate(1, 1);
         if (rc.canSenseLocation(squareMapLoc)) {
-            int worth = totalWorth(rc, squareMapLoc, ruins);
+            int worth = totalWorth(rc, squareMapLoc);
             if (worth > worthThreshold) {
                 best = squareMapLoc;
                 bestWorth = worth;
@@ -228,7 +321,7 @@ public class Splasher {
 
         squareMapLoc = rc.getLocation().translate(2, 0);
         if (rc.canSenseLocation(squareMapLoc)) {
-            int worth = totalWorth(rc, squareMapLoc, ruins);
+            int worth = totalWorth(rc, squareMapLoc);
             if (worth > worthThreshold) {
                 best = squareMapLoc;
                 bestWorth = worth;
@@ -237,7 +330,7 @@ public class Splasher {
 
         squareMapLoc = rc.getLocation().translate(-2, 0);
         if (rc.canSenseLocation(squareMapLoc)) {
-            int worth = totalWorth(rc, squareMapLoc, ruins);
+            int worth = totalWorth(rc, squareMapLoc);
             if (worth > worthThreshold) {
                 best = squareMapLoc;
                 bestWorth = worth;
@@ -246,7 +339,7 @@ public class Splasher {
 
         squareMapLoc = rc.getLocation().translate(0, 2);
         if (rc.canSenseLocation(squareMapLoc)) {
-            int worth = totalWorth(rc, squareMapLoc, ruins);
+            int worth = totalWorth(rc, squareMapLoc);
             if (worth > worthThreshold) {
                 best = squareMapLoc;
                 bestWorth = worth;
@@ -255,7 +348,7 @@ public class Splasher {
 
         squareMapLoc = rc.getLocation().translate(0, -2);
         if (rc.canSenseLocation(squareMapLoc)) {
-            int worth = totalWorth(rc, squareMapLoc, ruins);
+            int worth = totalWorth(rc, squareMapLoc);
             if (worth > worthThreshold) {
                 best = squareMapLoc;
                 bestWorth = worth;
@@ -450,7 +543,7 @@ public class Splasher {
     }
 
 
-    static int totalWorth(RobotController rc, MapLocation square, MapLocation[] ruins) throws GameActionException {
+    static int totalWorth(RobotController rc, MapLocation square) throws GameActionException {
         MapLocation loc;
         int worth = 0;
         MapInfo mi;
@@ -461,16 +554,15 @@ public class Splasher {
             if (cache.contains(loc)) {
                 worth += cache.getVal(loc);
             } else {
-                int val = getWorth(mi, ruins);
-                RobotInfo r = rc.senseRobotAtLocation(loc);
+                int val = getWorth(mi);
+                /*RobotInfo r = rc.senseRobotAtLocation(loc);
                 if (r != null) {
                     if (r.getType().isTowerType() && r.getTeam() != rc.getTeam())
                         worth += 12;
-                }
+                }*/
                 cache.add(loc, val);
                 worth += val;
             }
-
         }
         loc = square.translate(-1, 0);
         if (rc.canSenseLocation(loc)) {
@@ -478,12 +570,12 @@ public class Splasher {
             if (cache.contains(loc)) {
                 worth += cache.getVal(loc);
             } else {
-                int val = getWorth(mi, ruins);
-                RobotInfo r = rc.senseRobotAtLocation(loc);
+                int val = getWorth(mi);
+                /*RobotInfo r = rc.senseRobotAtLocation(loc);
                 if (r != null) {
                     if (r.getType().isTowerType() && r.getTeam() != rc.getTeam())
                         worth += 12;
-                }
+                }*/
                 cache.add(loc, val);
                 worth += val;
             }
@@ -495,12 +587,12 @@ public class Splasher {
             if (cache.contains(loc)) {
                 worth += cache.getVal(loc);
             } else {
-                int val = getWorth(mi, ruins);
-                RobotInfo r = rc.senseRobotAtLocation(loc);
+                int val = getWorth(mi);
+                /*RobotInfo r = rc.senseRobotAtLocation(loc);
                 if (r != null) {
                     if (r.getType().isTowerType() && r.getTeam() != rc.getTeam())
                         worth += 12;
-                }
+                }*/
                 cache.add(loc, val);
                 worth += val;
             }
@@ -512,12 +604,12 @@ public class Splasher {
             if (cache.contains(loc)) {
                 worth += cache.getVal(loc);
             } else {
-                int val = getWorth(mi, ruins);
-                RobotInfo r = rc.senseRobotAtLocation(loc);
+                int val = getWorth(mi);
+                /*RobotInfo r = rc.senseRobotAtLocation(loc);
                 if (r != null) {
                     if (r.getType().isTowerType() && r.getTeam() != rc.getTeam())
                         worth += 12;
-                }
+                }*/
                 cache.add(loc, val);
                 worth += val;
             }
@@ -529,12 +621,12 @@ public class Splasher {
             if (cache.contains(loc)) {
                 worth += cache.getVal(loc);
             } else {
-                int val = getWorth(mi, ruins);
-                RobotInfo r = rc.senseRobotAtLocation(loc);
+                int val = getWorth(mi);
+                /*RobotInfo r = rc.senseRobotAtLocation(loc);
                 if (r != null) {
                     if (r.getType().isTowerType() && r.getTeam() != rc.getTeam())
                         worth += 12;
-                }
+                }*/
                 cache.add(loc, val);
                 worth += val;
             }
@@ -546,12 +638,12 @@ public class Splasher {
             if (cache.contains(loc)) {
                 worth += cache.getVal(loc);
             } else {
-                int val = getWorth(mi, ruins);
-                RobotInfo r = rc.senseRobotAtLocation(loc);
+                int val = getWorth(mi);
+                /*RobotInfo r = rc.senseRobotAtLocation(loc);
                 if (r != null) {
                     if (r.getType().isTowerType() && r.getTeam() != rc.getTeam())
                         worth += 12;
-                }
+                }*/
                 cache.add(loc, val);
                 worth += val;
             }
@@ -563,12 +655,12 @@ public class Splasher {
             if (cache.contains(loc)) {
                 worth += cache.getVal(loc);
             } else {
-                int val = getWorth(mi, ruins);
-                RobotInfo r = rc.senseRobotAtLocation(loc);
+                int val = getWorth(mi);
+                /*RobotInfo r = rc.senseRobotAtLocation(loc);
                 if (r != null) {
                     if (r.getType().isTowerType() && r.getTeam() != rc.getTeam())
                         worth += 12;
-                }
+                }*/
                 cache.add(loc, val);
                 worth += val;
             }
@@ -580,12 +672,12 @@ public class Splasher {
             if (cache.contains(loc)) {
                 worth += cache.getVal(loc);
             } else {
-                int val = getWorth(mi, ruins);
-                RobotInfo r = rc.senseRobotAtLocation(loc);
+                int val = getWorth(mi);
+                /*RobotInfo r = rc.senseRobotAtLocation(loc);
                 if (r != null) {
                     if (r.getType().isTowerType() && r.getTeam() != rc.getTeam())
                         worth += 12;
-                }
+                }*/
                 cache.add(loc, val);
                 worth += val;
             }
@@ -597,12 +689,12 @@ public class Splasher {
             if (cache.contains(loc)) {
                 worth += cache.getVal(loc);
             } else {
-                int val = getWorth(mi, ruins);
-                RobotInfo r = rc.senseRobotAtLocation(loc);
+                int val = getWorth(mi);
+                /*RobotInfo r = rc.senseRobotAtLocation(loc);
                 if (r != null) {
                     if (r.getType().isTowerType() && r.getTeam() != rc.getTeam())
                         worth += 12;
-                }
+                }*/
                 cache.add(loc, val);
                 worth += val;
             }

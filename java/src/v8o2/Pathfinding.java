@@ -344,7 +344,6 @@ public class Pathfinding {
         }
 
         static boolean canPass(MapLocation loc, Direction targetDir) throws GameActionException {
-            // used when we don't have vision, relying on MapRecorder
             MapLocation newLoc = loc.add(targetDir);
             if (!rc.onTheMap(newLoc))
                 return false;

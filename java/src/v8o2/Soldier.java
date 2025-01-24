@@ -223,11 +223,13 @@ public class Soldier {
         if (!rc.canSenseLocation(closestEnemyTower) || !rc.canSenseRobotAtLocation(closestEnemyTower)) return false;
 
         int mult = 1;
+        int paintAmt = rc.getPaint();
         RobotInfo[] allies = rc.senseNearbyRobots(-1, rc.getTeam());
         for (var ri : allies) {
             if (ri.getType() == UnitType.SOLDIER) {
-                if (ri.getLocation().isWithinDistanceSquared(closestEnemyTower, 29) && ri.getPaintAmount() > 100) {
+                if (ri.getLocation().isWithinDistanceSquared(closestEnemyTower, 29) && ri.getPaintAmount() > 50) {
                     mult++;
+                    paintAmt += ri.getPaintAmount();
                 }
             }
         }
@@ -239,7 +241,7 @@ public class Soldier {
             if (enemyHp / 50 <= mult) return true;
             return false;
         }*/
-        if (enemyHp / 50 <= (paint / 6) * mult) return true;
+        if (enemyHp / 50 <= paintAmt / 5.5) return true;
         return false;
     }
 
@@ -358,7 +360,7 @@ public class Soldier {
         RobotInfo ri = rc.senseRobotAtLocation(ruinLoc);
         if (ri != null && ri.getType().isTowerType()) {
             ruins.remove(ruinLoc);
-            if(rc.getPaint() < 150) {
+            if(rc.getPaint() < 150 && ri.getLocation().isAdjacentTo(rc.getLocation())) {
                 Refill.refilling = true;
             }
             return false;

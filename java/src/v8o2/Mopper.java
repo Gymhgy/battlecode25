@@ -229,17 +229,15 @@ public class Mopper {
             }
         }
 
-        if (hitLoc == null) {
-            if (maxHits >= 2) {
-                rc.mopSwing(bestDirection);
-                return;
-            }
-            else {
-                for (RobotInfo enemy : enemies) {
-                    if (enemy.getType().isRobotType()) {
-                        rc.attack(enemy.getLocation());
-                        return;
-                    }
+        if (maxHits >= 2) {
+            rc.mopSwing(bestDirection);
+            return;
+        }
+        else if (hitLoc == null) {
+         for (RobotInfo enemy : enemies) {
+                if (enemy.getType().isRobotType()) {
+                    rc.attack(enemy.getLocation());
+                    return;
                 }
             }
         }

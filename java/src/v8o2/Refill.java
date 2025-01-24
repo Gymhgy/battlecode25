@@ -15,7 +15,7 @@ public class Refill {
     static MapLocation closestTower = null;
     static int lastRefill = 0;
     static boolean refill(RobotController rc) throws GameActionException {
-        if ((rc.getPaint() < minPaint /*&& rc.getRoundNum() - lastRefill > 25*/) || refilling) {
+        if ((rc.getPaint() < minPaint && rc.getRoundNum() - lastRefill > 25) || refilling) {
             closestTower = Refill.closestRefillTower(rc, Communicator.paintTowers);
             refilling = Refill.refillPaint(rc, closestTower);
         }
