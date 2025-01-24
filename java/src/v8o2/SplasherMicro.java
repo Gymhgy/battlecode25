@@ -166,12 +166,12 @@ public class SplasherMicro {
             if (canAttack) {
                 if (canHitTower && !M.canHitTower) return true;
                 if (!canHitTower && M.canHitTower) return false;
+
+                if (distToTower < M.distToTower) return true;
+                if (M.distToTower < distToTower) return false;
             }
 
             //Aggressive...
-            if (distToTower < M.distToTower) return true;
-            if (M.distToTower < distToTower) return false;
-
             if (numMoppers < M.numMoppers) return true;
             if (M.numMoppers < numMoppers) return false;
 

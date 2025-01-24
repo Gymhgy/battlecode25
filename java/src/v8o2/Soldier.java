@@ -42,7 +42,7 @@ public class Soldier {
     }
     static UnitType curRuinType = null;
     static MapLocation curRuin = null;
-    static MapInfo[] nearbyTiles;
+    static MapLocation[] nearbyRuins;
     static RobotInfo[] nearbyAllies;
     static MapLocation curSRP = null;
     static MapLocation closestEnemyTower;
@@ -60,7 +60,8 @@ public class Soldier {
         }
     }
     static void run(RobotController rc) throws GameActionException {
-        nearbyTiles = rc.senseNearbyMapInfos();
+        nearbyRuins = rc.senseNearbyRuins(-1);
+
         nearbyAllies = rc.senseNearbyRobots(-1, rc.getTeam());
         Communicator.update(rc);
         Communicator.relayEnemyTower(rc);
@@ -82,15 +83,14 @@ public class Soldier {
             rc.setIndicatorLine(rc.getLocation(), closestEnemyTower, 0, 0, 0);
         }
         if (curRuin == null && rc.getNumberTowers() < 25) {
-            for (MapInfo tile : nearbyTiles) {
-                if (tile.getMapLocation().isWithinDistanceSquared(rc.getLocation(), 2)) {
+            for (MapLocation tile : nearbyRuins) {
+                if (tile.isWithinDistanceSquared(rc.getLocation(), 2)) {
                     continue;
                 }
-                if (!tile.hasRuin()) continue;
-                ruins.add(tile.getMapLocation());
+                ruins.add(tile);
 
-                if (ruinCheck(rc, tile.getMapLocation())) {
-                    curRuin = tile.getMapLocation();
+                if (ruinCheck(rc, tile)) {
+                    curRuin = tile;
                     if (curRuinType == null) {
                         if (rc.getRoundNum() < 20) {
                             curRuinType = UnitType.LEVEL_ONE_MONEY_TOWER;
@@ -101,6 +101,11 @@ public class Soldier {
                         }
                     }
                 }
+            }
+        }
+        else if (rc.isActionReady()) {
+            for (MapLocation tile : nearbyRuins) {
+                 if (annoy(rc, tile)) break;
             }
         }
         if (rc.getNumberTowers() == 25) curRuin = null;
@@ -308,7 +313,6 @@ public class Soldier {
         paintLoop:
         for (int i = -2; i <= 2; i++) {
             for (int j = -2; j <= 2; j++) {
-                if (i == 0 && j == 0) continue;
                 MapLocation loc = FastMath.addVec(curSRP, new MapLocation(i, j));
                 if (canPaintReal(rc, loc)) {
                     boolean ideal = trySRP(loc);
@@ -337,8 +341,8 @@ public class Soldier {
         }
     }
     static boolean ruinCheck(RobotController rc, MapLocation ruin) throws GameActionException {
-        if (blacklist.contains(ruin)) return false;
         boolean ret = ruinCheckOld(rc, ruin);
+        if (blacklist.contains(ruin)) return false;
         if (!ret) {
             blacklist.add(ruin);
             popTime.add(rc.getRoundNum());
@@ -346,7 +350,7 @@ public class Soldier {
         return ret;
     }
     static boolean ruinCheckOld(RobotController rc, MapLocation ruinLoc) throws GameActionException {
-
+        RobotPlayer.indicator += "\nr-check: " + ruinLoc;
         if (!rc.canSenseLocation(ruinLoc)) {
             // uh we can't see the damn ruin... return true to be safe
             return true;
@@ -392,6 +396,7 @@ public class Soldier {
                 if (i == 0 && j == 0) continue;
                 MapLocation loc = FastMath.addVec(ruinLoc, new MapLocation(i, j));
                 if (rc.canSenseLocation(loc)) {
+                    RobotInfo r = rc.senseRobotAtLocation(loc);
                     PaintType pt = rc.senseMapInfo(loc).getPaint();
                     if (pt.isEnemy()) {
                         en++;
@@ -418,7 +423,7 @@ public class Soldier {
             }
         }
         if (en >= 10) return false;
-        if (empty > (rc.getPaint() / 5) / Math.max(1, soldierCount)) {
+        if (empty / Math.max(1, soldierCount) > (rc.getPaint() / 5) ) {
             Refill.refilling = true;
             curRuin = ruinLoc;
             return false;
@@ -426,7 +431,41 @@ public class Soldier {
         return true;
     }
 
-    static boolean suckle = false;
+    static boolean annoy(RobotController rc, MapLocation ruinLoc) throws GameActionException {
+        int en = 0;
+        int ally = 0;
+        boolean enemySoldier = false;
+        MapLocation annoy = null;
+        for (int i = -2; i <= 2; i++) {
+            for (int j = -2; j <= 2; j++) {
+                if (i == 0 && j == 0) continue;
+                MapLocation loc = FastMath.addVec(ruinLoc, new MapLocation(i, j));
+                if (rc.canSenseLocation(loc)) {
+                    RobotInfo r = rc.senseRobotAtLocation(loc);
+                    if(!enemySoldier && r!=null && r.getType()==UnitType.SOLDIER && r.getTeam() == rc.getTeam().opponent()) enemySoldier = true;
+                    PaintType pt = rc.senseMapInfo(loc).getPaint();
+                    if (pt.isAlly()) ally++;
+                    if (pt.isEnemy()) {
+                        en++;
+                    }
+                    else if (pt == PaintType.EMPTY) {
+                        if (canPaintReal(rc, loc))
+                            if (annoy == null || FastMath.rand256() % 4 == 0)
+                                annoy = loc;
+                    }
+                }
+            }
+        }
+        if (enemySoldier || en >= 5) {
+            if (ally == 0 || FastMath.rand256() % 3 == 0)
+                if (annoy != null) {
+                    rc.attack(annoy);
+                    return true;
+                }
+        }
+        return false;
+    }
+
     static void tryBuild(RobotController rc) throws GameActionException {
         if (rc.getChips() > 1000 && rc.canCompleteTowerPattern(curRuinType, curRuin)) {
             rc.completeTowerPattern(curRuinType, curRuin);
