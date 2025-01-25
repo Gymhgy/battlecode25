@@ -1,6 +1,7 @@
 package v8o3;
 
 import battlecode.common.*;
+import v8o3.fast.*;
 
 public class Tower {
     static final Direction[] directions = {
@@ -24,12 +25,24 @@ public class Tower {
         center = new MapLocation(rc.getMapWidth()/2, rc.getMapHeight()/2);
         spawners = rc.getAllLocationsWithinRadiusSquared(rc.getLocation(), 4);
     }
-
-
+    static int spawnsSinceLastSplasher = 0;
+    static RobotInfo[] nearbyEnemies;
     static void run(RobotController rc) throws GameActionException {
         hearThePeopleSpeak(rc);
         cleanup(rc);
         nearbyAllies = rc.senseNearbyRobots(-1, rc.getTeam());
+        nearbyEnemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
+        int moppers = 0;
+        boolean soldier = false;
+        for (RobotInfo r : nearbyAllies) {
+            if (r.getType() == UnitType.MOPPER) moppers++;
+        }
+        for (RobotInfo r : nearbyEnemies) {
+            if (r.getType() == UnitType.SOLDIER && moppers < 3) {
+                soldier = true;
+                break;
+            }
+        }
         MapLocation en = enemies.closest(rc.getLocation());
 
         rc.attack(null);
@@ -71,7 +84,7 @@ public class Tower {
             }
         }
 
-        if (canSpawn && rc.getChips() > 1300) {
+        if ((soldier || canSpawn) && rc.getChips() > 1300) {
 
 
             UnitType type = UnitType.SOLDIER;
@@ -81,12 +94,19 @@ public class Tower {
             /*if (og && rc.getRoundNum() == 2 && Util.isPaintTower(rc.getType())) {
                 type = UnitType.SPLASHER;
             }
-            else*/ if (og && rc.getRoundNum() < 20) {
+            else*/ if (og && rc.getRoundNum() < 15) {
                 type = UnitType.SOLDIER;
+            }
+            else if (soldier) {
+                rc.setIndicatorDot(rc.getLocation(), 255, 255, 0);
+                type = UnitType.MOPPER;
             }
             else if (rc.getRoundNum() < 50) {
                 var distr = new UnitType[] {UnitType.SOLDIER, UnitType.SOLDIER, UnitType.SOLDIER, UnitType.MOPPER, UnitType.MOPPER, UnitType.SPLASHER};
                 type = distr[FastMath.rand256() % distr.length];
+            }
+            else if (spawnsSinceLastSplasher > 5) {
+                type = UnitType.SPLASHER;
             }
             else {
                 var distr = new UnitType[] {UnitType.SOLDIER, UnitType.SOLDIER, UnitType.MOPPER, UnitType.MOPPER, UnitType.SPLASHER, UnitType.SPLASHER,
@@ -94,12 +114,16 @@ public class Tower {
                 type = distr[FastMath.rand256() % distr.length];
             }
 
-            MapLocation nextLoc = decideOnSpawn(rc, en);
+            MapLocation nextLoc = decideOnSpawn(rc, en, soldier, type);
+            if (nextLoc != null)
+                rc.setIndicatorDot(nextLoc,255, 0, 0);
             if (type == UnitType.SPLASHER && Util.isMoneyTower(rc.getType()))
                 nextLoc = null;
             if (nextLoc != null && rc.canBuildRobot(type, nextLoc)) {
                 rc.buildRobot(type, nextLoc);
                 lastSpawn = nextLoc;
+                if (type == UnitType.SPLASHER) spawnsSinceLastSplasher = 0;
+                else spawnsSinceLastSplasher++;
             }
         }
 
@@ -116,11 +140,25 @@ public class Tower {
     }
 
     static MapLocation lastSpawn = null;
-    static MapLocation decideOnSpawn(RobotController rc, MapLocation enemy) throws GameActionException {
+    static MapLocation decideOnSpawn(RobotController rc, MapLocation enemy, boolean soldier, UnitType type) throws GameActionException {
         RobotPlayer.indicator+="\nspawning: ";
         RobotPlayer.indicator+=Clock.getBytecodeNum() + "|";
 
         if (!rc.isActionReady() || spawners.length == 0) return null;
+
+        FastLocSet enemyLocs = new FastLocSet();
+        MapLocation closest = null;
+        if (soldier) {
+            for (RobotInfo badGuy : nearbyEnemies) {
+                if (badGuy.getType() == UnitType.SOLDIER) {
+                    for (Direction dir : Direction.allDirections()) {
+                        enemyLocs.add(badGuy.getLocation().add(dir));
+                    }
+                    if (closest == null || closest.distanceSquaredTo(rc.getLocation()) > badGuy.getLocation().distanceSquaredTo(rc.getLocation()))
+                        closest = badGuy.getLocation();
+                }
+            }
+        }
 
         FastLocSet adjacentLocs = new FastLocSet();
 
@@ -146,7 +184,13 @@ public class Tower {
                 }
             }
 
-            if (enemy != null) {
+            if (soldier) {
+                if (enemyLocs.contains(spawner)) score += 1000;
+                if(closest != null)
+                    score -= spawner.distanceSquaredTo(closest) * 2;
+            }
+
+            else if (enemy != null) {
                 int dist = spawner.distanceSquaredTo(enemy);
                 score -= dist;
                 if (dist <= UnitType.LEVEL_THREE_PAINT_TOWER.actionRadiusSquared) score -= 10000;

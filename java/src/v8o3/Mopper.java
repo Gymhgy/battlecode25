@@ -84,7 +84,7 @@ public class Mopper {
                     MapLocation potentialMove = rc.getLocation().add(dir);
                     if (rc.canSenseLocation(potentialMove) && rc.senseMapInfo(potentialMove).getPaint().isEnemy()) continue;
                     if (rc.canMove(dir) && potentialMove.isAdjacentTo(enemy.getLocation())) {
-                        if (closestTower == null || potentialMove.isWithinDistanceSquared(closestTower,  UnitType.LEVEL_ONE_PAINT_TOWER.actionRadiusSquared)) {
+                        if (closestTower == null || potentialMove.isWithinDistanceSquared(closestTower, 16)) {
                             rc.move(dir);
                         }
                         if (rc.isActionReady()) performAttack(rc);

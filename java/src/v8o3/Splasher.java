@@ -22,6 +22,7 @@ public class Splasher {
         MapLocation bl = null;
         for (int i = ruins.length; i-->0; ) {
             RobotInfo r = rc.senseRobotAtLocation(ruins[i]);
+            if (r == null) continue;
             if (!(r != null && r.getTeam() != rc.getTeam() && r.getType().isTowerType())) {
                 continue;
             }
