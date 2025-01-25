@@ -221,8 +221,12 @@ public class Soldier {
 
     private static boolean canBeat(RobotController rc) throws GameActionException {
         if (!rc.canSenseLocation(closestEnemyTower) || !rc.canSenseRobotAtLocation(closestEnemyTower)) return false;
-
         int mult = 1;
+        if (rc.canSenseRobotAtLocation(closestEnemyTower)) {
+            if(Util.isDefenseTower(rc.senseRobotAtLocation(closestEnemyTower).getType())) {
+                mult = 2;
+            }
+        }
         int paintAmt = rc.getPaint();
         RobotInfo[] allies = rc.senseNearbyRobots(-1, rc.getTeam());
         for (var ri : allies) {

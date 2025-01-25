@@ -1,7 +1,6 @@
-package v8o2;
+package v8o3;
 
 import battlecode.common.*;
-import v8o2.fast.FastLocSet;
 
 public class Mopper {
 
@@ -71,6 +70,13 @@ public class Mopper {
         if (rc.isActionReady()) performAttack(rc);
         if (!rc.isMovementReady()) return;
         RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(8, rc.getTeam().opponent());
+        RobotInfo[] nearbyTower = rc.senseNearbyRobots(-1, rc.getTeam());
+        MapLocation closestTower = null;
+        for (RobotInfo tower: nearbyTower) {
+            if (tower.getType().isTowerType()) {
+                closestTower = tower.getLocation();
+            }
+        }
         for (RobotInfo enemy : nearbyEnemies) {
             if (enemy.paintAmount == 0) continue;
             if (enemy.getType() == UnitType.SOLDIER || enemy.getType() == UnitType.SPLASHER) {
@@ -78,7 +84,9 @@ public class Mopper {
                     MapLocation potentialMove = rc.getLocation().add(dir);
                     if (rc.canSenseLocation(potentialMove) && rc.senseMapInfo(potentialMove).getPaint().isEnemy()) continue;
                     if (rc.canMove(dir) && potentialMove.isAdjacentTo(enemy.getLocation())) {
-                        rc.move(dir);
+                        if (closestTower == null || potentialMove.isWithinDistanceSquared(closestTower,  UnitType.LEVEL_ONE_PAINT_TOWER.actionRadiusSquared)) {
+                            rc.move(dir);
+                        }
                         if (rc.isActionReady()) performAttack(rc);
                         return;
                     }
