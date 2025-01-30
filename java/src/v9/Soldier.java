@@ -284,16 +284,11 @@ public class Soldier {
                     if(rc.isActionReady())
                         paintRandomly(rc);
                 }*/
-                if (rc.getID() % 3 == -1) {
-                    if (fill(rc)) {
-                        if (closestEnemyTower != null) {
-                            Pathfinding.moveToward(rc, closestEnemyTower);
-                        } else {
-                            Explorer.smartExplore(rc);
-                        }
-                        if(rc.isActionReady())
-                            paintRandomly(rc);
-                    }
+                if (rc.getID() % 3 == 1) {
+                    Explorer.smartExplore(rc);
+                    if(rc.isActionReady())
+                        paintRandomly(rc);
+
                 }
                 else {
                     if (closestEnemyTower != null) {
