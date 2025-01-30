@@ -32,7 +32,7 @@ public class Util {
             Direction.WEST,
             Direction.NORTHWEST,
     };
-    static final int SRP_BUILDER = 3;
+    static final int SRP_BUILDER = 2;
     public static boolean isSrpBuilder(RobotController rc, int id) {
         if (rc.getNumberTowers() < 3) return false;
         double r = (double)(rc.getMapWidth() * rc.getMapHeight() - 400) / 3600;

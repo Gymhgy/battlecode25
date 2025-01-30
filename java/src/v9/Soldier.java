@@ -125,7 +125,14 @@ public class Soldier {
                 badSRPs.add(srp.translate(1, -4));
                 badSRPs.add(srp.translate(-1, 4));
                 badSRPs.add(srp.translate(-1, -4));
-
+                badSRPs.add(srp.translate(4, 2));
+                badSRPs.add(srp.translate(4, -2));
+                badSRPs.add(srp.translate(-4, 2));
+                badSRPs.add(srp.translate(-4, -2));
+                badSRPs.add(srp.translate(2, 4));
+                badSRPs.add(srp.translate(2, -4));
+                badSRPs.add(srp.translate(-2, 4));
+                badSRPs.add(srp.translate(-2, -4));
             }
        }
         RobotPlayer.indicator += Clock.getBytecodeNum() + "\n";
@@ -244,6 +251,8 @@ public class Soldier {
 
         if (curRuin == null) {
             boolean isSrpBuilder = Util.isSrpBuilder(rc, rc.getID());
+            isSrpBuilder &= closestEnemyTower == null ||
+                    !closestEnemyTower.isWithinDistanceSquared(rc.getLocation(), 30);
             if (isSrpBuilder) {
                 if (curSRP != null && !canSRP(rc, curSRP)) curSRP = null;
                 if (curSRP == null) {
@@ -284,7 +293,7 @@ public class Soldier {
                     if(rc.isActionReady())
                         paintRandomly(rc);
                 }*/
-                if (rc.getID() % 3 == 1) {
+                if (rc.getID() % 5 == 1) {
                     Explorer.smartExplore(rc);
                     if(rc.isActionReady())
                         paintRandomly(rc);
@@ -385,6 +394,12 @@ public class Soldier {
                 break;
             }
         }
+        if (!safe) {
+            blacklist.add(curSRP);
+            popTime.add(rc.getRoundNum());
+            curSRP = null;
+            return;
+        }
         if (safe) {
             if (rc.canCompleteResourcePattern(curSRP)) {
                 rc.completeResourcePattern(curSRP);
@@ -403,7 +418,7 @@ public class Soldier {
                 return;
             }
         }
-        if (rc.canMark(curSRP) && !rc.senseMapInfo(curSRP).getMark().isSecondary()) {
+        if (rc.getLocation().equals(curSRP) && rc.canMark(curSRP) && !rc.senseMapInfo(curSRP).getMark().isSecondary()) {
             rc.mark(curSRP, true);
         }
         MapLocation myLoc = rc.getLocation();
@@ -893,7 +908,7 @@ public class Soldier {
     static FastLocSet badSRPs = new FastLocSet();
     static boolean canSRP(RobotController rc, MapLocation srpLoc) throws GameActionException {
         if (badSRPs.contains(srpLoc)) return false;
-
+        if (blacklist.contains(srpLoc)) return false;
         if (rc.canSenseLocation(srpLoc) && rc.senseMapInfo(srpLoc).isResourcePatternCenter()) return false;
         if (!rc.getLocation().isWithinDistanceSquared(srpLoc, 2)) {
             int soldierCount = 0;
@@ -905,7 +920,6 @@ public class Soldier {
                         soldierCount++;
                 }
             }
-            if (soldierCount >= 3) return false;
 
             loc = srpLoc.translate(1, 0);
             if (rc.canSenseLocation(loc) && rc.isLocationOccupied(loc)) {
@@ -915,7 +929,6 @@ public class Soldier {
                         soldierCount++;
                 }
             }
-            if (soldierCount >= 3) return false;
 
             loc = srpLoc.translate(0, 1);
             if (rc.canSenseLocation(loc) && rc.isLocationOccupied(loc)) {
@@ -1032,7 +1045,7 @@ public class Soldier {
             rc.attack(rc.getLocation(), trySRP(myLoc));
             return;
         }
-
+        /*
         for (MapInfo mi : nearbys) {
             MapLocation loc = mi.getMapLocation();
             if (!canPaintReal(rc, loc)) continue;
@@ -1041,7 +1054,7 @@ public class Soldier {
                 return;
             }
         }
-
+*/
         //if (rc.getPaint() <= 120) return;
         /*for(MapLocation loc : nearby) {
             boolean canOverwrite = true;

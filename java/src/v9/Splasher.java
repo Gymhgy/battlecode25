@@ -79,7 +79,7 @@ public class Splasher {
                 }
             } else {
                 //if (rc.isActionReady()) performAttack(rc);
-                MapLocation next = survey(rc);
+                MapLocation next = null;
                 if (next != null) {
                     splasherMicro.doMicro(next, false);
                     rc.setIndicatorLine(rc.getLocation(), next, 255, 10, 10);
@@ -91,7 +91,7 @@ public class Splasher {
         } else {
             if (rc.isActionReady()) performAttack(rc);
 
-            MapLocation next = survey(rc);
+            MapLocation next = null;
             if (next == null)
                 Explorer.smartExplore(rc);
                 //else if (prevNext != null && rc.getActionCooldownTurns() < 30)
