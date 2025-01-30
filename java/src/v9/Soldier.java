@@ -59,13 +59,85 @@ public class Soldier {
             closestEnemyTower = closest;
         }
     }
-    static void run(RobotController rc) throws GameActionException {
-        nearbyRuins = rc.senseNearbyRuins(-1);
 
+    static FastLocSet checked = new FastLocSet();
+    static void checkNearbySRPs(RobotController rc) throws GameActionException{
+        RobotPlayer.indicator += "check: " + Clock.getBytecodeNum() + " | ";
+        for(int i = nearbys.length; i-->0;) {
+            MapInfo mi = nearbys[i];
+            MapLocation srp = mi.getMapLocation();
+            if (checked.contains(srp)) continue;
+            if(mi.getMark().isSecondary() || mi.isResourcePatternCenter()) {
+                checked.add(srp);
+                badSRPs.add(srp.translate(-3, -3));
+                badSRPs.add(srp.translate(-3, -2));
+                badSRPs.add(srp.translate(-3, -1));
+                badSRPs.add(srp.translate(-3, 0));
+                badSRPs.add(srp.translate(-3, 1));
+                badSRPs.add(srp.translate(-3, 2));
+                badSRPs.add(srp.translate(-3, 3));
+                badSRPs.add(srp.translate(-2, -3));
+                badSRPs.add(srp.translate(-2, -2));
+                badSRPs.add(srp.translate(-2, -1));
+                badSRPs.add(srp.translate(-2, 0));
+                badSRPs.add(srp.translate(-2, 1));
+                badSRPs.add(srp.translate(-2, 2));
+                badSRPs.add(srp.translate(-2, 3));
+                badSRPs.add(srp.translate(-1, -3));
+                badSRPs.add(srp.translate(-1, -2));
+                badSRPs.add(srp.translate(-1, -1));
+                badSRPs.add(srp.translate(-1, 0));
+                badSRPs.add(srp.translate(-1, 1));
+                badSRPs.add(srp.translate(-1, 2));
+                badSRPs.add(srp.translate(-1, 3));
+                badSRPs.add(srp.translate(0, -3));
+                badSRPs.add(srp.translate(0, -2));
+                badSRPs.add(srp.translate(0, -1));
+                badSRPs.add(srp.translate(0, 1));
+                badSRPs.add(srp.translate(0, 2));
+                badSRPs.add(srp.translate(0, 3));
+                badSRPs.add(srp.translate(1, -3));
+                badSRPs.add(srp.translate(1, -2));
+                badSRPs.add(srp.translate(1, -1));
+                badSRPs.add(srp.translate(1, 0));
+                badSRPs.add(srp.translate(1, 1));
+                badSRPs.add(srp.translate(1, 2));
+                badSRPs.add(srp.translate(1, 3));
+                badSRPs.add(srp.translate(2, -3));
+                badSRPs.add(srp.translate(2, -2));
+                badSRPs.add(srp.translate(2, -1));
+                badSRPs.add(srp.translate(2, 0));
+                badSRPs.add(srp.translate(2, 1));
+                badSRPs.add(srp.translate(2, 2));
+                badSRPs.add(srp.translate(2, 3));
+                badSRPs.add(srp.translate(3, -3));
+                badSRPs.add(srp.translate(3, -2));
+                badSRPs.add(srp.translate(3, -1));
+                badSRPs.add(srp.translate(3, 0));
+                badSRPs.add(srp.translate(3, 1));
+                badSRPs.add(srp.translate(3, 2));
+                badSRPs.add(srp.translate(3, 3));
+                badSRPs.add(srp.translate(4, 1));
+                badSRPs.add(srp.translate(4, -1));
+                badSRPs.add(srp.translate(-4, 1));
+                badSRPs.add(srp.translate(-4, -1));
+                badSRPs.add(srp.translate(1, 4));
+                badSRPs.add(srp.translate(1, -4));
+                badSRPs.add(srp.translate(-1, 4));
+                badSRPs.add(srp.translate(-1, -4));
+
+            }
+       }
+        RobotPlayer.indicator += Clock.getBytecodeNum() + "\n";
+    }
+    static MapInfo[] nearbys;
+    static void run(RobotController rc) throws GameActionException {
         nearbyAllies = rc.senseNearbyRobots(-1, rc.getTeam());
+        nearbys = rc.senseNearbyMapInfos();
         Communicator.update(rc);
         Communicator.relayEnemyTower(rc);
         blacklistCleanup(rc);
+        nearbyRuins = Communicator.ruins;
 
         if (closestEnemyTower != null && !Communicator.enemyTowers.contains(closestEnemyTower)) closestEnemyTower = null;
         if (closestEnemyTower == null) closestEnemyTower = Communicator.enemyTowers.closest(rc.getLocation());
@@ -82,6 +154,8 @@ public class Soldier {
         if (closestEnemyTower != null) {
             rc.setIndicatorLine(rc.getLocation(), closestEnemyTower, 0, 0, 0);
         }
+
+
         boolean notWorking = curRuin == null || FastMath.chebyshev(curRuin, rc.getLocation()) > 2;
         if (notWorking && rc.getNumberTowers() < 25) {
             for (MapLocation tile : nearbyRuins) {
@@ -104,13 +178,19 @@ public class Soldier {
                 }
             }
         }
+
+        RobotPlayer.indicator += "annoy: " + Clock.getBytecodeNum() + " | ";
         if (rc.isActionReady()) {
             for (MapLocation tile : nearbyRuins) {
                  if (annoy(rc, tile)) break;
             }
         }
+        RobotPlayer.indicator += Clock.getBytecodeNum() + "\n";
+
+
         if (rc.getNumberTowers() == 25) curRuin = null;
 
+        RobotPlayer.indicator += "refill: " + Clock.getBytecodeNum() + " | ";
         if (curRuin == null && curSRP == null) {
             boolean refilling = Refill.refill(rc);
             if (refilling){
@@ -132,20 +212,27 @@ public class Soldier {
             }
             Refill.minPaint = initial;
         }
+        RobotPlayer.indicator += Clock.getBytecodeNum() + "\n";
+
         if (curRuin != null) {
             MapLocation toMark = null;
             boolean alrMarked = false;
+
             for (MapLocation loc : rc.getAllLocationsWithinRadiusSquared(curRuin, 2)) {
                 if (rc.canSenseLocation(loc) && rc.senseMapInfo(loc).getMark().isAlly()) {
                     alrMarked = true;
                     break;
                 }
                 if (rc.canMark(loc)) {
-                    toMark = loc;
+                    if (curRuinType == UnitType.LEVEL_ONE_PAINT_TOWER && (loc.x+loc.y)%2 == 1)
+                        toMark = loc;
+                    else if (curRuinType == UnitType.LEVEL_ONE_MONEY_TOWER && (loc.x+loc.y)%2 == 0)
+                        toMark = loc;
                 }
             }
+
             if (!alrMarked && toMark != null) {
-                rc.mark(toMark, curRuinType == UnitType.LEVEL_ONE_PAINT_TOWER);
+                rc.mark(toMark, false);
             }
 
             if (ruinCheck(rc, curRuin)) {
@@ -159,8 +246,13 @@ public class Soldier {
             boolean isSrpBuilder = Util.isSrpBuilder(rc, rc.getID());
             if (isSrpBuilder) {
                 if (curSRP != null && !canSRP(rc, curSRP)) curSRP = null;
-                if (curSRP == null)
+                if (curSRP == null) {
+                    checkNearbySRPs(rc);
+                    RobotPlayer.indicator += "wtf: " + Clock.getBytecodeNum() + " | ";
                     acquireSRP(rc);
+                    RobotPlayer.indicator +=  Clock.getBytecodeNum() + "\n";
+
+                }
                 if (curSRP != null) {
                     tryBuildSRP(rc);
                 }
@@ -215,7 +307,9 @@ public class Soldier {
             }
         }
 
+        RobotPlayer.indicator += "supply: " + Clock.getBytecodeNum() + " | ";
         supplyPaint(rc);
+        RobotPlayer.indicator += Clock.getBytecodeNum() + "\n";
         if (Util.shouldKMS(rc)) rc.disintegrate();;
         endTurn(rc);
     }
@@ -225,8 +319,7 @@ public class Soldier {
 
         int mult = 1;
         int paintAmt = rc.getPaint();
-        RobotInfo[] allies = rc.senseNearbyRobots(-1, rc.getTeam());
-        for (var ri : allies) {
+        for (var ri : nearbyAllies) {
             if (ri.getType() == UnitType.SOLDIER) {
                 if (ri.getLocation().isWithinDistanceSquared(closestEnemyTower, 29) && ri.getPaintAmount() > 50) {
                     mult++;
@@ -272,7 +365,15 @@ public class Soldier {
     }
 
     private static void acquireSRP(RobotController rc) throws GameActionException {
-        for (MapInfo mi : rc.senseNearbyMapInfos()) {
+        for (MapInfo mi : nearbys) {
+            if (Clock.getBytecodesLeft() < 2500) break;
+            if (centerSRP(mi.getMapLocation()) && canSRP(rc, mi.getMapLocation())) {
+                curSRP = mi.getMapLocation();
+                return;
+            }
+        }
+        for (MapInfo mi : nearbys) {
+            if (Clock.getBytecodesLeft() < 2500) break;
             if (canSRP(rc, mi.getMapLocation())) {
                 curSRP = mi.getMapLocation();
                 break;
@@ -298,16 +399,31 @@ public class Soldier {
             }
         }
 
-        if(!rc.getLocation().equals(curSRP))
+        if(!rc.getLocation().equals(curSRP)) {
             Pathfinding.moveToward(rc, curSRP);
+            nearbys = rc.senseNearbyMapInfos();
+            checkNearbySRPs(rc);
+            if (!canSRP(rc, curSRP)) {
+                curSRP = null;
+                return;
+            }
+        }
+        if (rc.canMark(curSRP) && !rc.senseMapInfo(curSRP).getMark().isSecondary()) {
+            rc.mark(curSRP, true);
+        }
         MapLocation myLoc = rc.getLocation();
+        boolean adj = rc.getLocation().isWithinDistanceSquared(curSRP, 2);
         if (canPaintReal(rc, myLoc) && myLoc.isWithinDistanceSquared(curSRP, 8)){
-            boolean ideal = trySRP(myLoc);
+            boolean ideal = trySRP(curSRP.x - myLoc.x, curSRP.y - myLoc.y);
             PaintType paintType = rc.senseMapInfo(myLoc).getPaint();
             if (paintType.isEnemy()) {
 
             }
-            else if (paintType == PaintType.EMPTY || paintType.isSecondary() != ideal) {
+            else if (paintType == PaintType.EMPTY) {
+                rc.attack(myLoc, ideal);
+                return;
+            }
+            else if (adj && paintType.isSecondary() != ideal) {
                 rc.attack(myLoc, ideal);
                 return;
             }
@@ -316,14 +432,18 @@ public class Soldier {
         paintLoop:
         for (int i = -2; i <= 2; i++) {
             for (int j = -2; j <= 2; j++) {
-                MapLocation loc = FastMath.addVec(curSRP, new MapLocation(i, j));
+                MapLocation loc = curSRP.translate(i, j);
                 if (canPaintReal(rc, loc)) {
-                    boolean ideal = trySRP(loc);
+                    boolean ideal = trySRP(i, j);
                     PaintType paintType = rc.senseMapInfo(loc).getPaint();
                     if (paintType.isEnemy()) {
 
                     }
-                    else if (paintType == PaintType.EMPTY || paintType.isSecondary() != ideal) {
+                    else if (paintType == PaintType.EMPTY) {
+                        rc.attack(loc, ideal);
+                        return;
+                    }
+                    else if (adj && paintType.isSecondary() != ideal) {
                         rc.attack(loc, ideal);
                         return;
                     }
@@ -344,16 +464,21 @@ public class Soldier {
         }
     }
     static boolean ruinCheck(RobotController rc, MapLocation ruin) throws GameActionException {
+        RobotPlayer.indicator += "r-check: " + Clock.getBytecodeNum() + " | ";
         boolean ret = ruinCheckOld(rc, ruin);
-        if (blacklist.contains(ruin)) return false;
+        if (blacklist.contains(ruin)) {
+            RobotPlayer.indicator += Clock.getBytecodeNum() + "!\n";
+            return false;
+        }
         if (!ret) {
             blacklist.add(ruin);
             popTime.add(rc.getRoundNum());
         }
+        RobotPlayer.indicator += Clock.getBytecodeNum() + "\n";
         return ret;
     }
     static boolean ruinCheckOld(RobotController rc, MapLocation ruinLoc) throws GameActionException {
-        RobotPlayer.indicator += "\nr-check: " + ruinLoc;
+        //RobotPlayer.indicator += "\nr-check: " + ruinLoc + " ";
         if (!rc.canSenseLocation(ruinLoc)) {
             // uh we can't see the damn ruin... return true to be safe
             return true;
@@ -378,11 +503,11 @@ public class Soldier {
                     soldierCount++;
                 }
             }
-            if (rc.senseMapInfo(loc).getMark() == PaintType.ALLY_SECONDARY) {
+            if (rc.senseMapInfo(loc).getMark().isAlly() && (loc.x+loc.y)%2 == 1) {
                 curRuinType = UnitType.LEVEL_ONE_PAINT_TOWER;
                 seePaint = true;
             }
-            else if (rc.senseMapInfo(loc).getMark() == PaintType.ALLY_PRIMARY) {
+            else if (rc.senseMapInfo(loc).getMark().isAlly() && (loc.x+loc.y)%2 == 0) {
                 curRuinType = UnitType.LEVEL_ONE_MONEY_TOWER;
                 seeMoney = true;
             }
@@ -434,6 +559,9 @@ public class Soldier {
     }
 
     static boolean annoy(RobotController rc, MapLocation ruinLoc) throws GameActionException {
+        if (!rc.canSenseLocation(ruinLoc)) return false;
+        RobotInfo r = rc.senseRobotAtLocation(ruinLoc);
+        if (r != null && r.getType().isTowerType()) return false;
         int en = 0;
         int ally = 0;
         boolean enemySoldier = false;
@@ -443,7 +571,7 @@ public class Soldier {
                 if (i == 0 && j == 0) continue;
                 MapLocation loc = FastMath.addVec(ruinLoc, new MapLocation(i, j));
                 if (rc.canSenseLocation(loc)) {
-                    RobotInfo r = rc.senseRobotAtLocation(loc);
+                    r = rc.senseRobotAtLocation(loc);
                     if(!enemySoldier && r!=null && r.getType()==UnitType.SOLDIER && r.getTeam() == rc.getTeam().opponent()) enemySoldier = true;
                     PaintType pt = rc.senseMapInfo(loc).getPaint();
                     if (pt.isAlly()) ally++;
@@ -454,6 +582,7 @@ public class Soldier {
                         if (canPaintReal(rc, loc))
                             if (annoy == null || FastMath.rand256() % 4 == 0)
                                 annoy = loc;
+                        if (enemySoldier || en >= 5) break;
                     }
                 }
             }
@@ -755,40 +884,113 @@ public class Soldier {
         int yp = loc.y % 4;
         return SRP.charAt(xp + yp*4) == 'X';
     }
+    static boolean trySRP(int i, int j) {
+        int xp = (i + 2) % 4;
+        int yp = (j + 2) % 4;
+        return SRP.charAt(xp + yp*4) == 'X';
+    }
     static String SRP = "XXOXXOOOOOXOXOOO";
     static boolean centerSRP(MapLocation loc) {
         int xp = loc.x % 4;
         int yp = loc.y % 4;
         return xp == 2 && yp == 2;
     }
-
     static FastLocSet badSRPs = new FastLocSet();
     static boolean canSRP(RobotController rc, MapLocation srpLoc) throws GameActionException {
         if (badSRPs.contains(srpLoc)) return false;
-        if (!centerSRP(srpLoc)) {
-            return false;
-        }
-
 
         if (rc.canSenseLocation(srpLoc) && rc.senseMapInfo(srpLoc).isResourcePatternCenter()) return false;
         if (!rc.getLocation().isWithinDistanceSquared(srpLoc, 2)) {
             int soldierCount = 0;
-            // TODO: unroll this loop #2, uses so much bytecode rn
-            MapLocation[] surroundingLocations = rc.getAllLocationsWithinRadiusSquared(srpLoc, 2);
-            for (MapLocation loc : surroundingLocations) {
-                if (rc.canSenseLocation(loc) && rc.isLocationOccupied(loc)) {
-                    RobotInfo robot = rc.senseRobotAtLocation(loc);
-                    if (robot.getType() == UnitType.SOLDIER && robot.getTeam() == rc.getTeam()) {
-                        if (Util.isSrpBuilder(rc, robot.getID()))
-                            soldierCount++;
-                    }
-                }
-                if (soldierCount >= 3) {
-                    /*blacklist.add(srpLoc);
-                    popTime.add(rc.getRoundNum());*/
-                    return false;
+            MapLocation loc = srpLoc.translate(0, 0);
+            if (rc.canSenseLocation(loc) && rc.isLocationOccupied(loc)) {
+                RobotInfo robot = rc.senseRobotAtLocation(loc);
+                if (robot.getType() == UnitType.SOLDIER && robot.getTeam() == rc.getTeam()) {
+                    if (Util.isSrpBuilder(rc, robot.getID()))
+                        soldierCount++;
                 }
             }
+            if (soldierCount >= 3) return false;
+
+            loc = srpLoc.translate(1, 0);
+            if (rc.canSenseLocation(loc) && rc.isLocationOccupied(loc)) {
+                RobotInfo robot = rc.senseRobotAtLocation(loc);
+                if (robot.getType() == UnitType.SOLDIER && robot.getTeam() == rc.getTeam()) {
+                    if (Util.isSrpBuilder(rc, robot.getID()))
+                        soldierCount++;
+                }
+            }
+            if (soldierCount >= 3) return false;
+
+            loc = srpLoc.translate(0, 1);
+            if (rc.canSenseLocation(loc) && rc.isLocationOccupied(loc)) {
+                RobotInfo robot = rc.senseRobotAtLocation(loc);
+                if (robot.getType() == UnitType.SOLDIER && robot.getTeam() == rc.getTeam()) {
+                    if (Util.isSrpBuilder(rc, robot.getID()))
+                        soldierCount++;
+                }
+            }
+            if (soldierCount >= 3) return false;
+
+            loc = srpLoc.translate(1, 1);
+            if (rc.canSenseLocation(loc) && rc.isLocationOccupied(loc)) {
+                RobotInfo robot = rc.senseRobotAtLocation(loc);
+                if (robot.getType() == UnitType.SOLDIER && robot.getTeam() == rc.getTeam()) {
+                    if (Util.isSrpBuilder(rc, robot.getID()))
+                        soldierCount++;
+                }
+            }
+            if (soldierCount >= 3) return false;
+
+            loc = srpLoc.translate(-1, -1);
+            if (rc.canSenseLocation(loc) && rc.isLocationOccupied(loc)) {
+                RobotInfo robot = rc.senseRobotAtLocation(loc);
+                if (robot.getType() == UnitType.SOLDIER && robot.getTeam() == rc.getTeam()) {
+                    if (Util.isSrpBuilder(rc, robot.getID()))
+                        soldierCount++;
+                }
+            }
+            if (soldierCount >= 3) return false;
+
+            loc = srpLoc.translate(-1, 0);
+            if (rc.canSenseLocation(loc) && rc.isLocationOccupied(loc)) {
+                RobotInfo robot = rc.senseRobotAtLocation(loc);
+                if (robot.getType() == UnitType.SOLDIER && robot.getTeam() == rc.getTeam()) {
+                    if (Util.isSrpBuilder(rc, robot.getID()))
+                        soldierCount++;
+                }
+            }
+            if (soldierCount >= 3) return false;
+
+            loc = srpLoc.translate(0, -1);
+            if (rc.canSenseLocation(loc) && rc.isLocationOccupied(loc)) {
+                RobotInfo robot = rc.senseRobotAtLocation(loc);
+                if (robot.getType() == UnitType.SOLDIER && robot.getTeam() == rc.getTeam()) {
+                    if (Util.isSrpBuilder(rc, robot.getID()))
+                        soldierCount++;
+                }
+            }
+            if (soldierCount >= 3) return false;
+
+            loc = srpLoc.translate(-1, 1);
+            if (rc.canSenseLocation(loc) && rc.isLocationOccupied(loc)) {
+                RobotInfo robot = rc.senseRobotAtLocation(loc);
+                if (robot.getType() == UnitType.SOLDIER && robot.getTeam() == rc.getTeam()) {
+                    if (Util.isSrpBuilder(rc, robot.getID()))
+                        soldierCount++;
+                }
+            }
+            if (soldierCount >= 3) return false;
+
+            loc = srpLoc.translate(1, -1);
+            if (rc.canSenseLocation(loc) && rc.isLocationOccupied(loc)) {
+                RobotInfo robot = rc.senseRobotAtLocation(loc);
+                if (robot.getType() == UnitType.SOLDIER && robot.getTeam() == rc.getTeam()) {
+                    if (Util.isSrpBuilder(rc, robot.getID()))
+                        soldierCount++;
+                }
+            }
+            if (soldierCount >= 3) return false;
         }
         /*for (MapLocation ml : rc.senseNearbyRuins(-1)) {
             RobotInfo ri = rc.senseRobotAtLocation(ml);
@@ -798,8 +1000,11 @@ public class Soldier {
         }*/
         for (MapLocation ruin : nearbyRuins) {
             RobotInfo r;
-            if (rc.canSenseLocation(ruin) && ((r=rc.senseRobotAtLocation(ruin))==null || !r.getType().isTowerType()))
+            if (FastMath.chebyshev(ruin, srpLoc) <= 3 && rc.canSenseLocation(ruin) && ((r=rc.senseRobotAtLocation(ruin))==null || !r.getType().isTowerType())) {
+                //blacklist.add(srpLoc);
+                //popTime.add(rc.getRoundNum());
                 return false;
+            }
         }
 
         for (int i = -2; i <= 2; i++) {
@@ -816,8 +1021,8 @@ public class Soldier {
                     return false;
                 }
                 if (mi.getPaint().isEnemy()) {
-                    //blacklist.add(srpLoc);
-                    //popTime.add(rc.getRoundNum());
+                    blacklist.add(srpLoc);
+                    popTime.add(rc.getRoundNum());
                     return false;
                 }
             }
@@ -827,15 +1032,13 @@ public class Soldier {
 
     static void paintRandomly(RobotController rc) throws  GameActionException {
         MapLocation myLoc = rc.getLocation();
-        MapInfo[] nearby = rc.senseNearbyMapInfos();
 
         if(canPaintReal(rc, myLoc) && !rc.senseMapInfo(myLoc).getPaint().isAlly()) {
             rc.attack(rc.getLocation(), trySRP(myLoc));
             return;
         }
 
-
-        for (MapInfo mi : nearby) {
+        for (MapInfo mi : nearbys) {
             MapLocation loc = mi.getMapLocation();
             if (!canPaintReal(rc, loc)) continue;
             if (mi.getPaint() == PaintType.EMPTY) {
