@@ -82,7 +82,8 @@ public class Soldier {
         if (closestEnemyTower != null) {
             rc.setIndicatorLine(rc.getLocation(), closestEnemyTower, 0, 0, 0);
         }
-        if (curRuin == null && rc.getNumberTowers() < 25) {
+        boolean notWorking = curRuin == null || FastMath.chebyshev(curRuin, rc.getLocation()) > 2;
+        if (notWorking && rc.getNumberTowers() < 25) {
             for (MapLocation tile : nearbyRuins) {
                 if (tile.isWithinDistanceSquared(rc.getLocation(), 2)) {
                     continue;
@@ -103,7 +104,7 @@ public class Soldier {
                 }
             }
         }
-        else if (rc.isActionReady()) {
+        if (rc.isActionReady()) {
             for (MapLocation tile : nearbyRuins) {
                  if (annoy(rc, tile)) break;
             }
@@ -427,8 +428,7 @@ public class Soldier {
         if (en >= 10) return false;
         if (empty / Math.max(1, soldierCount) > (rc.getPaint() / 5) ) {
             Refill.refilling = true;
-            curRuin = ruinLoc;
-            return false;
+            return true;
         }
         return true;
     }
@@ -524,21 +524,229 @@ public class Soldier {
             }
         }
         // else find 5x5
+
         paintLoop:
-        for (int i = -2; i <= 2; i++) {
-            for (int j = -2; j <= 2; j++) {
-                if (i == 0 && j == 0) continue;
-                MapLocation loc = FastMath.addVec(curRuin, new MapLocation(i, j));
-                if (canPaintReal(rc, loc)) {
-                    MapInfo mi = rc.senseMapInfo(loc);
-                    PaintType ideal = numToPaint(tower[i + 2][j + 2]);
-                    if (!mi.getPaint().equals(ideal) && rc.isActionReady()) {
-                        rc.attack(loc, ideal.isSecondary());
-                        break paintLoop;
-                    }
+        {
+            MapLocation loc;
+            loc = curRuin.translate(-2, -2);
+            if (canPaintReal(rc, loc)) {
+                MapInfo mi = rc.senseMapInfo(loc);
+                PaintType ideal = numToPaint(tower[0][0]);
+                if (!mi.getPaint().equals(ideal) && rc.isActionReady()) {
+                    rc.attack(loc, ideal.isSecondary());
+                    break paintLoop;
+                }
+            }
+            loc = curRuin.translate(-2, 2);
+            if (canPaintReal(rc, loc)) {
+                MapInfo mi = rc.senseMapInfo(loc);
+                PaintType ideal = numToPaint(tower[0][4]);
+                if (!mi.getPaint().equals(ideal) && rc.isActionReady()) {
+                    rc.attack(loc, ideal.isSecondary());
+                    break paintLoop;
+                }
+            }
+            loc = curRuin.translate(2, -2);
+            if (canPaintReal(rc, loc)) {
+                MapInfo mi = rc.senseMapInfo(loc);
+                PaintType ideal = numToPaint(tower[4][0]);
+                if (!mi.getPaint().equals(ideal) && rc.isActionReady()) {
+                    rc.attack(loc, ideal.isSecondary());
+                    break paintLoop;
+                }
+            }
+            loc = curRuin.translate(2, 2);
+            if (canPaintReal(rc, loc)) {
+                MapInfo mi = rc.senseMapInfo(loc);
+                PaintType ideal = numToPaint(tower[4][4]);
+                if (!mi.getPaint().equals(ideal) && rc.isActionReady()) {
+                    rc.attack(loc, ideal.isSecondary());
+                    break paintLoop;
+                }
+            }
+            loc = curRuin.translate(-2, -1);
+            if (canPaintReal(rc, loc)) {
+                MapInfo mi = rc.senseMapInfo(loc);
+                PaintType ideal = numToPaint(tower[0][1]);
+                if (!mi.getPaint().equals(ideal) && rc.isActionReady()) {
+                    rc.attack(loc, ideal.isSecondary());
+                    break paintLoop;
+                }
+            }
+            loc = curRuin.translate(-2, 1);
+            if (canPaintReal(rc, loc)) {
+                MapInfo mi = rc.senseMapInfo(loc);
+                PaintType ideal = numToPaint(tower[0][3]);
+                if (!mi.getPaint().equals(ideal) && rc.isActionReady()) {
+                    rc.attack(loc, ideal.isSecondary());
+                    break paintLoop;
+                }
+            }
+            loc = curRuin.translate(-1, -2);
+            if (canPaintReal(rc, loc)) {
+                MapInfo mi = rc.senseMapInfo(loc);
+                PaintType ideal = numToPaint(tower[1][0]);
+                if (!mi.getPaint().equals(ideal) && rc.isActionReady()) {
+                    rc.attack(loc, ideal.isSecondary());
+                    break paintLoop;
+                }
+            }
+            loc = curRuin.translate(-1, 2);
+            if (canPaintReal(rc, loc)) {
+                MapInfo mi = rc.senseMapInfo(loc);
+                PaintType ideal = numToPaint(tower[1][4]);
+                if (!mi.getPaint().equals(ideal) && rc.isActionReady()) {
+                    rc.attack(loc, ideal.isSecondary());
+                    break paintLoop;
+                }
+            }
+            loc = curRuin.translate(1, -2);
+            if (canPaintReal(rc, loc)) {
+                MapInfo mi = rc.senseMapInfo(loc);
+                PaintType ideal = numToPaint(tower[3][0]);
+                if (!mi.getPaint().equals(ideal) && rc.isActionReady()) {
+                    rc.attack(loc, ideal.isSecondary());
+                    break paintLoop;
+                }
+            }
+            loc = curRuin.translate(1, 2);
+            if (canPaintReal(rc, loc)) {
+                MapInfo mi = rc.senseMapInfo(loc);
+                PaintType ideal = numToPaint(tower[3][4]);
+                if (!mi.getPaint().equals(ideal) && rc.isActionReady()) {
+                    rc.attack(loc, ideal.isSecondary());
+                    break paintLoop;
+                }
+            }
+            loc = curRuin.translate(2, -1);
+            if (canPaintReal(rc, loc)) {
+                MapInfo mi = rc.senseMapInfo(loc);
+                PaintType ideal = numToPaint(tower[4][1]);
+                if (!mi.getPaint().equals(ideal) && rc.isActionReady()) {
+                    rc.attack(loc, ideal.isSecondary());
+                    break paintLoop;
+                }
+            }
+            loc = curRuin.translate(2, 1);
+            if (canPaintReal(rc, loc)) {
+                MapInfo mi = rc.senseMapInfo(loc);
+                PaintType ideal = numToPaint(tower[4][3]);
+                if (!mi.getPaint().equals(ideal) && rc.isActionReady()) {
+                    rc.attack(loc, ideal.isSecondary());
+                    break paintLoop;
+                }
+            }
+            loc = curRuin.translate(-2, 0);
+            if (canPaintReal(rc, loc)) {
+                MapInfo mi = rc.senseMapInfo(loc);
+                PaintType ideal = numToPaint(tower[0][2]);
+                if (!mi.getPaint().equals(ideal) && rc.isActionReady()) {
+                    rc.attack(loc, ideal.isSecondary());
+                    break paintLoop;
+                }
+            }
+            loc = curRuin.translate(-1, -1);
+            if (canPaintReal(rc, loc)) {
+                MapInfo mi = rc.senseMapInfo(loc);
+                PaintType ideal = numToPaint(tower[1][1]);
+                if (!mi.getPaint().equals(ideal) && rc.isActionReady()) {
+                    rc.attack(loc, ideal.isSecondary());
+                    break paintLoop;
+                }
+            }
+            loc = curRuin.translate(-1, 1);
+            if (canPaintReal(rc, loc)) {
+                MapInfo mi = rc.senseMapInfo(loc);
+                PaintType ideal = numToPaint(tower[1][3]);
+                if (!mi.getPaint().equals(ideal) && rc.isActionReady()) {
+                    rc.attack(loc, ideal.isSecondary());
+                    break paintLoop;
+                }
+            }
+            loc = curRuin.translate(0, -2);
+            if (canPaintReal(rc, loc)) {
+                MapInfo mi = rc.senseMapInfo(loc);
+                PaintType ideal = numToPaint(tower[2][0]);
+                if (!mi.getPaint().equals(ideal) && rc.isActionReady()) {
+                    rc.attack(loc, ideal.isSecondary());
+                    break paintLoop;
+                }
+            }
+            loc = curRuin.translate(0, 2);
+            if (canPaintReal(rc, loc)) {
+                MapInfo mi = rc.senseMapInfo(loc);
+                PaintType ideal = numToPaint(tower[2][4]);
+                if (!mi.getPaint().equals(ideal) && rc.isActionReady()) {
+                    rc.attack(loc, ideal.isSecondary());
+                    break paintLoop;
+                }
+            }
+            loc = curRuin.translate(1, -1);
+            if (canPaintReal(rc, loc)) {
+                MapInfo mi = rc.senseMapInfo(loc);
+                PaintType ideal = numToPaint(tower[3][1]);
+                if (!mi.getPaint().equals(ideal) && rc.isActionReady()) {
+                    rc.attack(loc, ideal.isSecondary());
+                    break paintLoop;
+                }
+            }
+            loc = curRuin.translate(1, 1);
+            if (canPaintReal(rc, loc)) {
+                MapInfo mi = rc.senseMapInfo(loc);
+                PaintType ideal = numToPaint(tower[3][3]);
+                if (!mi.getPaint().equals(ideal) && rc.isActionReady()) {
+                    rc.attack(loc, ideal.isSecondary());
+                    break paintLoop;
+                }
+            }
+            loc = curRuin.translate(2, 0);
+            if (canPaintReal(rc, loc)) {
+                MapInfo mi = rc.senseMapInfo(loc);
+                PaintType ideal = numToPaint(tower[4][2]);
+                if (!mi.getPaint().equals(ideal) && rc.isActionReady()) {
+                    rc.attack(loc, ideal.isSecondary());
+                    break paintLoop;
+                }
+            }
+            loc = curRuin.translate(-1, 0);
+            if (canPaintReal(rc, loc)) {
+                MapInfo mi = rc.senseMapInfo(loc);
+                PaintType ideal = numToPaint(tower[1][2]);
+                if (!mi.getPaint().equals(ideal) && rc.isActionReady()) {
+                    rc.attack(loc, ideal.isSecondary());
+                    break paintLoop;
+                }
+            }
+            loc = curRuin.translate(0, -1);
+            if (canPaintReal(rc, loc)) {
+                MapInfo mi = rc.senseMapInfo(loc);
+                PaintType ideal = numToPaint(tower[2][1]);
+                if (!mi.getPaint().equals(ideal) && rc.isActionReady()) {
+                    rc.attack(loc, ideal.isSecondary());
+                    break paintLoop;
+                }
+            }
+            loc = curRuin.translate(0, 1);
+            if (canPaintReal(rc, loc)) {
+                MapInfo mi = rc.senseMapInfo(loc);
+                PaintType ideal = numToPaint(tower[2][3]);
+                if (!mi.getPaint().equals(ideal) && rc.isActionReady()) {
+                    rc.attack(loc, ideal.isSecondary());
+                    break paintLoop;
+                }
+            }
+            loc = curRuin.translate(1, 0);
+            if (canPaintReal(rc, loc)) {
+                MapInfo mi = rc.senseMapInfo(loc);
+                PaintType ideal = numToPaint(tower[3][2]);
+                if (!mi.getPaint().equals(ideal) && rc.isActionReady()) {
+                    rc.attack(loc, ideal.isSecondary());
+                    break paintLoop;
                 }
             }
         }
+
+
     }
 
     // true is secondary
@@ -557,8 +765,9 @@ public class Soldier {
     static FastLocSet badSRPs = new FastLocSet();
     static boolean canSRP(RobotController rc, MapLocation srpLoc) throws GameActionException {
         if (badSRPs.contains(srpLoc)) return false;
-        if (!centerSRP(srpLoc)) return false;
-
+        if (!centerSRP(srpLoc)) {
+            return false;
+        }
 
 
         if (rc.canSenseLocation(srpLoc) && rc.senseMapInfo(srpLoc).isResourcePatternCenter()) return false;
@@ -587,6 +796,12 @@ public class Soldier {
                 if (ml.distanceSquaredTo(srpLoc) <= 32) return false;
             }
         }*/
+        for (MapLocation ruin : nearbyRuins) {
+            RobotInfo r;
+            if (rc.canSenseLocation(ruin) && ((r=rc.senseRobotAtLocation(ruin))==null || !r.getType().isTowerType()))
+                return false;
+        }
+
         for (int i = -2; i <= 2; i++) {
             for (int j = -2; j <= 2; j++) {
                 MapLocation loc = FastMath.addVec(srpLoc, new MapLocation(i, j));
@@ -618,6 +833,7 @@ public class Soldier {
             rc.attack(rc.getLocation(), trySRP(myLoc));
             return;
         }
+
 
         for (MapInfo mi : nearby) {
             MapLocation loc = mi.getMapLocation();
