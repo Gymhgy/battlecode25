@@ -62,7 +62,7 @@ public class Soldier {
 
     static FastLocSet checked = new FastLocSet();
     static void checkNearbySRPs(RobotController rc) throws GameActionException{
-        RobotPlayer.indicator += "check: " + Clock.getBytecodeNum() + " | ";
+        //RobotPlayer.indicator += "check: " + Clock.getBytecodeNum() + " | ";
         for(int i = nearbys.length; i-->0;) {
             MapInfo mi = nearbys[i];
             MapLocation srp = mi.getMapLocation();
@@ -135,7 +135,7 @@ public class Soldier {
                 badSRPs.add(srp.translate(-2, -4));
             }
        }
-        RobotPlayer.indicator += Clock.getBytecodeNum() + "\n";
+        //RobotPlayer.indicator += Clock.getBytecodeNum() + "\n";
     }
     static MapInfo[] nearbys;
     static void run(RobotController rc) throws GameActionException {
@@ -159,7 +159,7 @@ public class Soldier {
         }
         attackTower(rc);
         if (closestEnemyTower != null) {
-            rc.setIndicatorLine(rc.getLocation(), closestEnemyTower, 0, 0, 0);
+            //rc.setIndicatorLine(rc.getLocation(), closestEnemyTower, 0, 0, 0);
         }
 
 
@@ -186,18 +186,18 @@ public class Soldier {
             }
         }
 
-        RobotPlayer.indicator += "annoy: " + Clock.getBytecodeNum() + " | ";
+        //RobotPlayer.indicator += "annoy: " + Clock.getBytecodeNum() + " | ";
         if (rc.isActionReady()) {
             for (MapLocation tile : nearbyRuins) {
                  if (annoy(rc, tile)) break;
             }
         }
-        RobotPlayer.indicator += Clock.getBytecodeNum() + "\n";
+        //RobotPlayer.indicator += Clock.getBytecodeNum() + "\n";
 
 
         if (rc.getNumberTowers() == 25) curRuin = null;
 
-        RobotPlayer.indicator += "refill: " + Clock.getBytecodeNum() + " | ";
+        //RobotPlayer.indicator += "refill: " + Clock.getBytecodeNum() + " | ";
         if (curRuin == null && curSRP == null) {
             boolean refilling = Refill.refill(rc);
             if (refilling){
@@ -219,7 +219,7 @@ public class Soldier {
             }
             Refill.minPaint = initial;
         }
-        RobotPlayer.indicator += Clock.getBytecodeNum() + "\n";
+        //RobotPlayer.indicator += Clock.getBytecodeNum() + "\n";
 
         if (curRuin != null) {
             MapLocation toMark = null;
@@ -257,9 +257,9 @@ public class Soldier {
                 if (curSRP != null && !canSRP(rc, curSRP)) curSRP = null;
                 if (curSRP == null) {
                     checkNearbySRPs(rc);
-                    RobotPlayer.indicator += "wtf: " + Clock.getBytecodeNum() + " | ";
+                    //RobotPlayer.indicator += "wtf: " + Clock.getBytecodeNum() + " | ";
                     acquireSRP(rc);
-                    RobotPlayer.indicator +=  Clock.getBytecodeNum() + "\n";
+                    //RobotPlayer.indicator +=  Clock.getBytecodeNum() + "\n";
 
                 }
                 if (curSRP != null) {
@@ -311,9 +311,9 @@ public class Soldier {
             }
         }
 
-        RobotPlayer.indicator += "supply: " + Clock.getBytecodeNum() + " | ";
+        //RobotPlayer.indicator += "supply: " + Clock.getBytecodeNum() + " | ";
         supplyPaint(rc);
-        RobotPlayer.indicator += Clock.getBytecodeNum() + "\n";
+        //RobotPlayer.indicator += Clock.getBytecodeNum() + "\n";
         if (Util.shouldKMS(rc)) rc.disintegrate();;
         endTurn(rc);
     }
@@ -474,17 +474,17 @@ public class Soldier {
         }
     }
     static boolean ruinCheck(RobotController rc, MapLocation ruin) throws GameActionException {
-        RobotPlayer.indicator += "r-check: " + Clock.getBytecodeNum() + " | ";
+        //RobotPlayer.indicator += "r-check: " + Clock.getBytecodeNum() + " | ";
         boolean ret = ruinCheckOld(rc, ruin);
         if (blacklist.contains(ruin)) {
-            RobotPlayer.indicator += Clock.getBytecodeNum() + "!\n";
+            //RobotPlayer.indicator += Clock.getBytecodeNum() + "!\n";
             return false;
         }
         if (!ret) {
             blacklist.add(ruin);
             popTime.add(rc.getRoundNum());
         }
-        RobotPlayer.indicator += Clock.getBytecodeNum() + "\n";
+        //RobotPlayer.indicator += Clock.getBytecodeNum() + "\n";
         return ret;
     }
     static boolean ruinCheckOld(RobotController rc, MapLocation ruinLoc) throws GameActionException {
@@ -1079,16 +1079,16 @@ public class Soldier {
 
     static void endTurn(RobotController rc) throws GameActionException {
         if (curRuin != null) {
-            rc.setIndicatorLine(rc.getLocation(), curRuin, 255, 0, 0);
+            //rc.setIndicatorLine(rc.getLocation(), curRuin, 255, 0, 0);
         } else if (curSRP != null) {
-            rc.setIndicatorLine(rc.getLocation(), curSRP, 255, 0, 255);
+            //rc.setIndicatorLine(rc.getLocation(), curSRP, 255, 0, 255);
 
         }
         if (rc.getID() % 3 == 1) {
-            rc.setIndicatorDot(rc.getLocation(), 0, 255, 0);
+            //rc.setIndicatorDot(rc.getLocation(), 0, 255, 0);
             }
 
-        rc.setIndicatorString(RobotPlayer.indicator);
+        //rc.setIndicatorString(RobotPlayer.indicator);
     }
     static boolean canPaintReal(RobotController rc, MapLocation loc) throws GameActionException { // canPaint that checks for cost
         int paintCap = rc.getPaint();

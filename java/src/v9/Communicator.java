@@ -52,7 +52,7 @@ public class Communicator {
 
         for (Message m : rc.readMessages(rc.getRoundNum()-1)) {
             Info info = parse(m.getBytes());
-            RobotPlayer.indicator += "<" + info +">";
+            //RobotPlayer.indicator += "<" + info +">";
             if (info.addition) {
                 if (allies.contains(info.loc)) continue;
                 if (!enemyTowers.contains(info.loc)) {
@@ -90,9 +90,9 @@ public class Communicator {
                 allies.add(ruins[i]);
                 /*
                 if (rc.getType() == UnitType.SPLASHER) {
-                    rc.setIndicatorLine(rc.getLocation(), ruins[i], 0, 0, 255);
+                    //rc.setIndicatorLine(rc.getLocation(), ruins[i], 0, 0, 255);
                     if (Splasher.target != null && enemyTowers.contains((Splasher.target))) {
-                        rc.setIndicatorDot(new MapLocation(0,0), 255, 255, 255);
+                        //rc.setIndicatorDot(new MapLocation(0,0), 255, 255, 255);
                     }
                 }
                 */
@@ -107,7 +107,7 @@ public class Communicator {
             }
         }
         for(int i = 0; i < queue.size; i++) {
-            RobotPlayer.indicator += parse(queue.at(i)) + "|";
+            //RobotPlayer.indicator += parse(queue.at(i)) + "|";
         }
     }
 

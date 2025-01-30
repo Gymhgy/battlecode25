@@ -28,7 +28,7 @@ public class Mopper {
         indicator = "";
         Communicator.update(rc);
         Communicator.relayEnemyTower(rc);
-
+        enemies = rc.senseNearbyRobots(-1, rc.getTeam().opponent());
         if (closestEnemyTower != null && !Communicator.enemyTowers.contains(closestEnemyTower)) closestEnemyTower = null;
         if (closestEnemyTower == null) closestEnemyTower = Communicator.enemyTowers.closest(rc.getLocation());
 
@@ -78,7 +78,7 @@ public class Mopper {
                 for (Direction dir : RobotPlayer.directions) {
                     MapLocation potentialMove = rc.getLocation().add(dir);
                     if (rc.canSenseLocation(potentialMove) && rc.senseMapInfo(potentialMove).getPaint().isEnemy()) continue;
-                    if (rc.canMove(dir) && potentialMove.isAdjacentTo(enemy.getLocation())) {
+                    if (inEnemyRange(rc, dir) && potentialMove.isAdjacentTo(enemy.getLocation())) {
                         rc.move(dir);
                         if (rc.isActionReady()) performAttack(rc);
                         return;
@@ -88,6 +88,16 @@ public class Mopper {
         }
     }
 
+    static boolean inEnemyRange(RobotController rc, Direction d) {
+        MapLocation newLoc = rc.getLocation().add(d);
+        if (!rc.canMove(d)) return false;
+        for (RobotInfo r : enemies) {
+            if (r.getType().isTowerType() && Util.inTowerRange(newLoc, r)) {
+                return false;
+            }
+        }
+        return true;
+    }
 
     static void goTowardsEnemyPaint(RobotController rc) throws GameActionException {
         nearbyTiles = rc.senseNearbyMapInfos();
@@ -141,7 +151,7 @@ public class Mopper {
             } else {
                 Pathfinding.moveToward(rc, target);
             }
-            rc.setIndicatorLine(rc.getLocation(), target, 155, 255, 155);
+            //rc.setIndicatorLine(rc.getLocation(), target, 155, 255, 155);
         }
         if (rc.isActionReady()) {
             for (MapInfo loc : rc.senseNearbyMapInfos(2)) {
@@ -247,7 +257,7 @@ public class Mopper {
         }
     }
     static void endTurn(RobotController rc) {
-        rc.setIndicatorString(RobotPlayer.indicator);
+        //rc.setIndicatorString(RobotPlayer.indicator);
     }
 
 

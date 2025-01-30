@@ -100,7 +100,7 @@ public class Tower {
                 type = UnitType.SOLDIER;
             }
             else if (soldier) {
-                rc.setIndicatorDot(rc.getLocation(), 255, 255, 0);
+                //rc.setIndicatorDot(rc.getLocation(), 255, 255, 0);
                 type = UnitType.MOPPER;
             }
             else if (rc.getRoundNum() < 50) {
@@ -115,7 +115,7 @@ public class Tower {
 
             MapLocation nextLoc = decideOnSpawn(rc, en, soldier, type);
             if (nextLoc != null)
-                rc.setIndicatorDot(nextLoc,255, 0, 0);
+                //rc.setIndicatorDot(nextLoc,255, 0, 0);
             if (type == UnitType.SPLASHER && Util.isMoneyTower(rc.getType()))
                 nextLoc = null;
             if (nextLoc != null && rc.canBuildRobot(type, nextLoc)) {
@@ -126,14 +126,14 @@ public class Tower {
 
         attackNearby(rc);
         letThePeopleKnow(rc);
-        RobotPlayer.indicator += "\n";
+        //RobotPlayer.indicator += "\n";
         if (en != null) {
-            rc.setIndicatorLine(rc.getLocation(), en, 255, 255, 255);
-            RobotPlayer.indicator += enemies.closest(rc.getLocation()).toString();
+            //rc.setIndicatorLine(rc.getLocation(), en, 255, 255, 255);
+            //RobotPlayer.indicator += enemies.closest(rc.getLocation()).toString();
         }
-        else RobotPlayer.indicator += enemies.size;
+        //else //RobotPlayer.indicator += enemies.size;
 
-        rc.setIndicatorString(RobotPlayer.indicator);
+        //rc.setIndicatorString(RobotPlayer.indicator);
     }
 
     static MapLocation lastSpawn = null;
@@ -200,8 +200,8 @@ public class Tower {
                 bestScore = score;
                 bestLocation = spawner;
             }
-            if (soldier)
-                System.out.println(spawner + " " + score);
+            //if (soldier)
+            //    System.out.println(spawner + " " + score);
         }
         RobotPlayer.indicator+=Clock.getBytecodeNum() + "|";
         return bestLocation;
@@ -249,7 +249,7 @@ public class Tower {
 
         Message[] messages = rc.readMessages(rc.getRoundNum()-1);
         for(Message m : messages) {
-            RobotPlayer.indicator += Clock.getBytecodeNum() +"|";
+            //RobotPlayer.indicator += Clock.getBytecodeNum() +"|";
             Info info = Communicator.parse(m.getBytes());
             if (info.addition) {
                 //if (!enemies.contains(loc)) queue.add(loc);
@@ -273,10 +273,10 @@ public class Tower {
     static FastIntSet blacklist = new FastIntSet();
     static FastIntSet popTime = new FastIntSet();
     static void cleanup(RobotController rc) {
-        RobotPlayer.indicator += "\ncleanup: ";
-        RobotPlayer.indicator += Clock.getBytecodeNum() + "|";
+        //RobotPlayer.indicator += "\ncleanup: ";
+        //RobotPlayer.indicator += Clock.getBytecodeNum() + "|";
         while (popTime.size > 0) {
-            RobotPlayer.indicator += Clock.getBytecodeNum() + "|";
+            //RobotPlayer.indicator += Clock.getBytecodeNum() + "|";
             if (rc.getRoundNum() - popTime.peek() > 30) {
                 popTime.pop();
                 blacklist.pop();
@@ -288,7 +288,7 @@ public class Tower {
     // TODO: only one potential problem... donotsend entries are never evicted... oh well
     static void letThePeopleKnow(RobotController rc) throws GameActionException {
         RobotPlayer.indicator+="\nlet the ppl: ";
-        RobotPlayer.indicator += Clock.getBytecodeNum() +"|";
+        //RobotPlayer.indicator += Clock.getBytecodeNum() +"|";
         int i = 0;
         Info deletion = new Info();
         Info addition = new Info();
@@ -303,14 +303,14 @@ public class Tower {
         while (i++ < 20 && queue.size > 0) {
             rc.broadcastMessage(queue.pop());
         }
-        RobotPlayer.indicator += Clock.getBytecodeNum() +"|";
+        //RobotPlayer.indicator += Clock.getBytecodeNum() +"|";
 
         if (addition.loc == null && deletion.loc == null) return;
         int d = Communicator.serialize(deletion);
         int a = Communicator.serialize(addition);
         RobotInfo[] allies = rc.senseNearbyRobots(-1, rc.getTeam());
         for (RobotInfo r : allies) {
-            RobotPlayer.indicator += Clock.getBytecodeNum() +"|";
+            //RobotPlayer.indicator += Clock.getBytecodeNum() +"|";
             if (i >= 20) return;
             if (!rc.canSendMessage(r.getLocation())) continue;
             do {

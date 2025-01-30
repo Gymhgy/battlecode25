@@ -47,18 +47,18 @@ public class Splasher {
         Communicator.relayEnemyTower(rc);
         boolean refilling = Refill.refill(rc);
         if (refilling) {
-            rc.setIndicatorDot(rc.getLocation(), 255, 0, 125);
-            rc.setIndicatorString("refilling");
+            //rc.setIndicatorDot(rc.getLocation(), 255, 0, 125);
+            //rc.setIndicatorString("refilling");
             return;
         }
 
-        RobotPlayer.indicator += "\nworth: " + Clock.getBytecodeNum() + "|";
+        //RobotPlayer.indicator += "\nworth: " + Clock.getBytecodeNum() + "|";
         MapLocation[] ruins = rc.senseNearbyRuins(-1);
         updateRuinWorths(rc, ruins);
-        RobotPlayer.indicator += Clock.getBytecodeNum() + "\n";
-        /*RobotPlayer.indicator += "\ncache: " + Clock.getBytecodeNum() + "|";
+        //RobotPlayer.indicator += Clock.getBytecodeNum() + "\n";
+        /*//RobotPlayer.indicator += "\ncache: " + Clock.getBytecodeNum() + "|";
         computeCache(rc);
-        RobotPlayer.indicator += Clock.getBytecodeNum() + "\n";*/
+        //RobotPlayer.indicator += Clock.getBytecodeNum() + "\n";*/
 
         if (target != null && !Communicator.enemyTowers.contains(target)) target = null;
         if (target == null) target = Communicator.enemyTowers.closest(rc.getLocation());
@@ -82,7 +82,7 @@ public class Splasher {
                 MapLocation next = null;
                 if (next != null) {
                     splasherMicro.doMicro(next, false);
-                    rc.setIndicatorLine(rc.getLocation(), next, 255, 10, 10);
+                    //rc.setIndicatorLine(rc.getLocation(), next, 255, 10, 10);
                 } else {
                     Pathfinding.moveToward(rc, target);
                 }
@@ -101,17 +101,17 @@ public class Splasher {
             }
 
             if (next != null)
-                rc.setIndicatorLine(rc.getLocation(), next, 255, 10, 10);
+                //rc.setIndicatorLine(rc.getLocation(), next, 255, 10, 10);
 
             prevNext = next;
         }
 
-        RobotPlayer.indicator += "\nworth: " + Clock.getBytecodeNum() + "|";
+        //RobotPlayer.indicator += "\nworth: " + Clock.getBytecodeNum() + "|";
         updateRuinWorths(rc, rc.senseNearbyRuins(-1));
-        RobotPlayer.indicator += Clock.getBytecodeNum() + "\n";
+        //RobotPlayer.indicator += Clock.getBytecodeNum() + "\n";
 
         if (target != null)
-            rc.setIndicatorLine(rc.getLocation(), target, 255, 255, 255);
+            //rc.setIndicatorLine(rc.getLocation(), target, 255, 255, 255);
         endTurn(rc);
     }
 
@@ -360,8 +360,8 @@ public class Splasher {
             }
         }
         ind += Clock.getBytecodeNum();
-        RobotPlayer.indicator += ind;
-        //rc.setIndicatorString(ind);
+        //RobotPlayer.indicator += ind;
+        ////rc.setIndicatorString(ind);
         int thresh = rc.getRoundNum() < 150 ? 24 : worthThreshold;
         if (best != null && canPaintReal(rc, best) && bestWorth > worthThreshold) {
             if (rc.canAttack(best)) {
@@ -377,7 +377,7 @@ public class Splasher {
 
 
     static void endTurn(RobotController rc) throws GameActionException {
-        rc.setIndicatorString(RobotPlayer.indicator);
+        //rc.setIndicatorString(RobotPlayer.indicator);
     }
 
 

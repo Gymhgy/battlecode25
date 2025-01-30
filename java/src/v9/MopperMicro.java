@@ -180,13 +180,13 @@ public class MopperMicro {
             if(canMove && !M.canMove) return true;
             if(!canMove && M.canMove) return false;
 
+            if (inTowerRange && !M.inTowerRange) return false;
+            if (!inTowerRange && M.inTowerRange) return true;
+
             if (distanceToTarget > 2 && M.distanceToTarget > 2) {
                 if (distanceToTarget < M.distanceToTarget) return true;
                 if (M.distanceToTarget < distanceToTarget) return false;
             }
-
-            if (inTowerRange && !M.inTowerRange) return false;
-            if (!inTowerRange && M.inTowerRange) return true;
 
             if (numMoppers < M.numMoppers) return true;
             if (M.numMoppers < numMoppers) return false;
