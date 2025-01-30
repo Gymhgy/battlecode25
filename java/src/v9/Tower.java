@@ -170,7 +170,7 @@ public class Tower {
 
         for (MapLocation spawner : spawners) {
             RobotPlayer.indicator+=Clock.getBytecodeNum() + "|";
-            if (!rc.canBuildRobot(type, spawner)) continue;
+            if (!rc.canBuildRobot(UnitType.SOLDIER, spawner)) continue;
 
             int score = 0;
 
